@@ -5,8 +5,7 @@
  "z"   'my/toggle-buffer
  ";"   'avy-goto-word-or-subword-1
  "/"   'evil-ex-search-forward
- "'"   'tmux-insert-state
- ","   'my/other-window
+ ","   'my/switch-window
  ":"   'evil-ex
  "SPC" 'evil-scroll-page-down
  "DEL" 'evil-scroll-page-up
@@ -17,23 +16,36 @@
  "t"   'universal-argument
  "q"   'my/quit-this-buffer
  "TAB" nil
+ "RET" nil
  ">"   'evil-shift-right-line
  "<"   'evil-shift-left-line
  )
 
 (define-key universal-argument-map "t" 'universal-argument-more)
 
-(define-key evil-normal-state-map (kbd "RET") 'my/insert-newline-below)
-;;(define-key evil-normal-state-map "s" nil)
-
-(define-key evil-motion-state-map [down-mouse-1] nil)
-(global-set-key (kbd "M-j") 'tabbar-backward-tab)
-(with-eval-after-load "c++-mode"
-  (define-key c++-mode-map (kbd "M-j") nil))
-(global-set-key (kbd "M-k") 'tabbar-forward-tab)
-(global-set-key (kbd "M-F") 'forward-word)
-(global-set-key (kbd "C-k") 'hippie-expand)
 (define-key evil-normal-state-map (kbd "DEL") 'evil-scroll-page-up)
+
+(global-set-key (kbd "<s-right>") nil)
+(global-set-key (kbd "<s-left>") nil)
+(global-set-key (kbd "<s-up>") nil)
+(global-set-key (kbd "<s-down>") nil)
+
+(general-define-key
+ :keymaps '(normal insert emacs)
+ "M-i" 'completion-at-point
+ "M-." 'xref-find-definitions
+ "M-?" 'xref-find-references
+ )
+
+(general-create-definer my-return-def
+  :prefix "RET")
+
+(my-return-def
+  :states '(normal motion visual) 
+  "RET" 'open-next-line
+  "DEL" 'open-previous-line
+  "ESC" 'keyboard-quit
+ )
 
 (general-create-definer my-f-def
   :prefix "f")
@@ -106,7 +118,6 @@
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
   "c"    'hydra-misc/body
-  "d"    'toggle-window-split
   "e"    'my/split-window-vertically
   "fw"   'write-file
   "g"    'magit-status
@@ -124,8 +135,9 @@
   "z"    'delete-frame
   "B"    'balance-windows
   "D"    'save-buffers-kill-emacs
-  "G"    'magit-dispatch-popup
   "F"    'get-buffer-file-name
+  "G"    'magit-dispatch-popup
+  "M"    'toggle-window-split
   "h"    'hydra-window-left/body
   "j"    'hydra-window-down/body
   "k"    'hydra-window-up/body
@@ -144,27 +156,30 @@
   :states '(normal motion visual) 
   :keymaps 'override
   ","    'tmux-ls
-  ";"    'tmux-display-pane-numbers
+  "'"    'tmux-display-pane-numbers
+  ";"    'hydra-tmux-command-history2/body
   "-"    'tmux-last-dir
   "_"    'tmux-split-window-vertical
-  "."    'hydra-tmux-rerun-command/body
   "b"    'tmux-capture-pane
   "c"    'tmux-ctrl-c
   "d"    'tmux-ctrl-d
   "e"    'tmux-clear-pane
   "h"    'tmux-home-dir
+  "i"    'tmux-insert-state
   "j"    'tmux-run-shell
   "k"    'hydra-tmux-command-history/body
   "l"    'tmux-swap-pane
   "m"    'tmux-toggle-zoom
-  "n"    'tmux-rename-window
+  "n"    'tmux-send-no
+  "p"    'tmux-pwd
   "q"    'tmux-quit
+  "r"    'tmux-rename-window
   "s"    'tmux-send-region
   "t"    'hydra-tmux-window-config/body
   "u"    'tmux-up-dir
   "v"    'tmux-terminal-view
   "w"    'tmux-last-window
-  "y"    'hydra-tmux-command-history2/body
+  "y"    'tmux-send-yes
   "z"    'tmux-ctrl-z
   "D"    'tmux-kill-pane
   "N"    'tmux-new-window
@@ -273,6 +288,7 @@
             (define-key evil-normal-state-local-map   "k" 'dired-previous-line)
             (local-unset-key "l")
             (local-unset-key "n")
+            ;;(local-set-key "o" 'dired-find-file)
             (local-unset-key "p")
             (local-unset-key "q")
             (define-key evil-normal-state-local-map   "r" 'revert-buffer)
@@ -281,15 +297,17 @@
             (local-unset-key "w")
             (local-unset-key "y")
             (local-set-key "L" 'tmux-tail-this-file)
-            (local-set-key   "E" 'dired-toggle-read-only)
-            (local-set-key   "T" 'dired-toggle-marks)
+            (local-set-key "E" 'dired-toggle-read-only)
+            ;;(local-set-key "O" 'dired-find-file-other-window)
+            (local-set-key "T" 'dired-toggle-marks)
+            (local-set-key "X" 'tmux-dired-run-file)
             (local-unset-key ",")
             (local-unset-key "'")
             (local-unset-key ".")
-            (local-unset-key (kbd "SPC"))
             (local-unset-key (kbd "DEL"))
             ;; (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
             (define-key evil-normal-state-local-map  (kbd "SPC") 'evil-scroll-down) 
+            (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-file) 
             (define-key evil-normal-state-local-map  (kbd "S-SPC") 'evil-scroll-up)
             (local-set-key   "x" 'dired-mark)
             ))
@@ -305,7 +323,28 @@
 (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-occur)
 (define-key ivy-minibuffer-map (kbd "M-j") 'next-line)
 (define-key ivy-minibuffer-map (kbd "M-k") 'previous-line)
+;; keybindings on mac side
+(define-key ivy-minibuffer-map (kbd "s-o") 'ivy-occur)
+(define-key ivy-minibuffer-map (kbd "s-j") 'next-line)
+(define-key ivy-minibuffer-map (kbd "s-k") 'previous-line)
 (define-key ivy-minibuffer-map (kbd "M-;") 'kill-ivy-file)
+
+(define-key org-mode-map (kbd "M-h") 'outline-up-heading)
+(define-key org-mode-map (kbd "M-j") 'org-forward-heading-same-level)
+(define-key org-mode-map (kbd "M-k") 'org-backward-heading-same-level)
+(define-key org-mode-map (kbd "M-l") 'org-goto-first-child)
+(define-key org-mode-map (kbd "M-m") '(lambda () (interactive) (outline-back-to-heading)))
+(define-key org-mode-map (kbd "M-RET") 'org-meta-return)
+
+(define-key org-mode-map (kbd "<s-right>") 'org-metaright)
+(define-key org-mode-map (kbd "<s-left>") 'org-metaleft)
+(define-key org-mode-map (kbd "<s-up>") 'org-metaup)
+(define-key org-mode-map (kbd "<s-down>") 'org-metadown)
+(define-key org-mode-map (kbd "<S-s-right>") 'org-shiftmetaright)
+(define-key org-mode-map (kbd "<S-s-left>") 'org-shiftmetarleft)
+(define-key org-mode-map (kbd "<S-s-up>") 'org-metaup)
+(define-key org-mode-map (kbd "<S-s-down>") 'org-metadown)
+(define-key org-mode-map (kbd "<s-return>") 'org-meta-return)
 
 (defun kill-ivy-file (x)
   (interactive)
@@ -391,6 +430,7 @@
   ("p" my/counsel-recentf-py "python")
   ("q" my/counsel-recentf-sql-cql "[sc]ql")
   ("s" my/counsel-recentf-sh "sh")
+  ("t" my/counsel-recentf-txt "txt")
   ("x" my/counsel-recentf-xml "xml")
   ("r" counsel-recentf "recent")
   ("," my/counsel-recentf-set-file-extension "set designated")
@@ -472,25 +512,24 @@
 
 (defhydra hydra-tmux-command-history2 (:body-pre (tmux-begin-cmd-history) :hint nil :foreign-keys warn)
   "
-  ;; _d_: page down _j_: down _k_: up _SPC_: quit _u_: page up 
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select _escape_: quit  
 "
-  ("d" tmux-page-down)
-  ("j" tmux-down)
-  ("k" tmux-up)
-  ("u" tmux-page-up)
+  ("DEL" tmux-page-up)
+  ("SPC" tmux-page-down)
   ("RET" tmux-run-a-history-cmd :exit t)
-  ("SPC" tmux-quit-copy-mode :exit t)
+  ("j" tmux-copy-mode-down)
+  ("k" tmux-copy-mode-up)
+  ("<escape>" tmux-quit-copy-mode :exit t)
   )
 
 (defhydra hydra-tmux-copy-mode (:body-pre (tmux-begin-copy-mode) :hint nil :foreign-keys warn)
   "
-  ;; _d_: page down _j_: down _k_: up _SPC_: quit _u_: page up 
-"
-  ("d" tmux-halfpage-down)
-  ("j" tmux-down)
-  ("k" tmux-up)
-  ("SPC" tmux-quit-copy-mode :exit t)
-  ("u" tmux-halfpage-up)
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _<escape>_: quit "
+  ("DEL" tmux-halfpage-up)
+  ("SPC" tmux-halfpage-down)
+  ("j" tmux-copy-mode-down)
+  ("k" tmux-copy-mode-up)
+  ("<escape>" tmux-quit :exit t)
   )
 
 (defhydra hydra-tmux-window-config (:body-pre (setq tmux-selected-pane "0"))

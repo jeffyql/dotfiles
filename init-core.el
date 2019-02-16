@@ -197,6 +197,14 @@ has been displayed in this session."
     :diminish undo-tree-mode)
 )
 
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+  )
+
+
 (use-package expand-region :ensure t)
 
 (use-package general :ensure t)
@@ -227,6 +235,12 @@ has been displayed in this session."
     )
   )
 
+(use-package org
+  :ensure org-plus-contrib
+  :pin org
+  :ensure t
+  )
+
 (use-package which-key
   :ensure t
   :config
@@ -255,13 +269,15 @@ has been displayed in this session."
   (interactive)
   (evil-end-of-line))
 
-(defun my/insert-newline-below (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (evil-insert-newline-above)
-    (if (eq this-command last-command)
-        (evil-insert-newline-below)
-      (ignore))))
+(defun my/insert-newline-below ()
+  (interactive)
+  (if (eq this-command last-command)
+      (evil-insert-newline-below)
+    (ignore)))
+
+(defun my/insert-newline-below-2 ()
+  (interactive)
+  (evil-insert-newline-below))
 
 (defun my/kill-ring-save-symbol-at-point ()
   "Kill word under cursor"
@@ -340,7 +356,7 @@ has been displayed in this session."
   )
 
 ;; todo, remove ace dependenc
-(defun my/other-window ()
+(defun my/switch-window ()
   (interactive)
   (if (one-window-p)
       (my/split-window-horizontally)

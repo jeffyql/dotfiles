@@ -92,4 +92,23 @@
       (revert-buffer-with-coding-system 'utf-8-unix)
     (revert-buffer-with-coding-system 'utf-8-dos)))
 
+(defun open-next-line (arg)
+      "Move to the next line and then opens a line.
+    See also `newline-and-indent'."
+      (interactive "p")
+      (end-of-line)
+      (open-line arg)
+      (next-line 1)
+      (when newline-and-indent
+        (indent-according-to-mode)))
+
+(defun open-previous-line (arg)
+      "Open a new line before the current one. 
+     See also `newline-and-indent'."
+      (interactive "p")
+      (beginning-of-line)
+      (open-line arg)
+      (when newline-and-indent
+        (indent-according-to-mode)))
+
 (provide 'init-snippets)

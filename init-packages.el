@@ -89,11 +89,6 @@
 
 ;(use-package gruvbox-theme :ensure t)
 
-(use-package org
-  :ensure org-plus-contrib
-  :pin org
-  )
-
 (use-package persistent-scratch
   :ensure t
   :config

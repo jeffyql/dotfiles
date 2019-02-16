@@ -25,6 +25,10 @@
   (interactive)
   (let* (beg end cmd-str)
     (cond
+     ((eq major-mode 'python-mode)
+      (unless (equal "python" (substring (tmux-pane-1-login-type) 0 6))
+        (error "must run in a ipthon shell"))))
+    (cond
      (mark-active
       (setq beg (region-beginning) 
             end (region-end))
@@ -40,14 +44,22 @@
         (setq beg (point)
               end (line-end-position))))
      (t
-      (setq beg (point)
-            end (point-at-eol))))
+      (save-excursion
+        (back-to-indentation)
+        (setq beg (point)
+              end (line-end-position)))))
     (setq cmd-str (buffer-substring-no-properties beg end)
           cmd-str (replace-regexp-in-string ";\\'" "\\\\;" cmd-str))
     (tmux-run-key cmd-str)
     (unless comint-input-ring
       (comint-read-input-ring 'silent))
     (comint-add-to-input-history cmd-str)
+    ))
+
+(defun tmux-dired-run-file ()
+  (interactive)
+  (let ((cmd-str (dired-get-filename)))
+    (tmux-run-key cmd-str)
     ))
 
 (defun tmux-send-selection (cmd-str)
@@ -309,6 +321,14 @@
   (tmux-send-key "C-z")
   )
 
+(defun tmux-send-no ()
+  (interactive)
+  (tmux-run-key "n"))
+
+(defun tmux-send-yes ()
+  (interactive)
+  (tmux-run-key "y"))
+
 (defun tmux-clear-pane ()
   (interactive)
   (tmux-send-key "-R" "C-l")
@@ -322,7 +342,7 @@
     (tmux-run-command "resize-pane" "-y" (number-to-string height))))
 
 (defun tmux-pane-1-login-type ()
-  (replace-regexp-in-string "'" "" (tmux-display-message "#{pane_current_command}")))
+  (replace-regexp-in-string "'" "" (tmux-display-message "#{pane_current_command}" "1")))
 
 (defun tmux-sync-location-with-emacs ()
   (interactive)
@@ -333,7 +353,7 @@
         (unless (y-or-n-p "continue?")
           (throw :exit "cancelled"))))
     (if (not (file-remote-p default-directory))
-        (tmux-run-key "cd" default-directory)
+        (tmux-run-key "cd" " " default-directory)
       (setq vec (tramp-dissect-file-name default-directory)
             method (nth 1 vec)
             user (nth 2 vec)
@@ -363,13 +383,21 @@
   (tmux-send-char t)
   )
 
-(defun tmux-command-history-prev ()
+(defun tmux-down ()
+  (interactive)
+  (tmux-send-key "Down"))
+
+(defun tmux-up ()
   (interactive)
   (tmux-send-key "Up"))
 
+(defun tmux-command-history-prev ()
+  (interactive)
+  (tmux-up))
+
 (defun tmux-command-history-next ()
   (interactive)
-  (tmux-send-key "Down")
+  (tmux-down)
   )
 
 (defun tmux-last-dir ()

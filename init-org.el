@@ -1,12 +1,16 @@
+;; Document structure
+(setq org-M-RET-may-split-line nil)
+
+;; 
 (require 'org-id)
 ;(require 'helm-org-rifle)
 
-(setq org-agenda-files (apply 'append
-			      (mapcar
-			       (lambda (directory)
-				 (directory-files-recursively
-				  directory org-agenda-file-regexp))
-			       '("~/org/db/" "~/org/notes/"))))
+;; (setq org-agenda-files (apply 'append
+;; 			      (mapcar
+;; 			       (lambda (directory)
+;; 				 (directory-files-recursively
+;; 				  directory org-agenda-file-regexp))
+;; 			       '("~/org/db/" "~/org/notes/"))))
 
 (defun org-goto-first-child-cmd ()
   (interactive)
@@ -16,40 +20,27 @@
   (interactive)
   (outline-back-to-heading))
 
-(define-key org-mode-map (kbd "M-b") 'outline-back-to-heading-cmd) 
-(define-key org-mode-map (kbd "M-h") 'outline-up-heading) 
-(define-key org-mode-map (kbd "M-j") 'org-forward-heading-same-level) 
-(define-key org-mode-map (kbd "M-k") 'org-backward-heading-same-level) 
-(define-key org-mode-map (kbd "M-l") 'org-goto-first-child-cmd) 
-(define-key org-mode-map (kbd "M-L") 'org-metaright)
-(define-key org-mode-map (kbd "M-H") 'org-metaleft)
-(define-key org-mode-map (kbd "M-K") 'org-metaup)
-(define-key org-mode-map (kbd "M-J") 'org-metadown)
-(define-key org-mode-map (kbd "M-F") 'org-shiftmetaright)
-(define-key org-mode-map (kbd "M-B") 'org-shiftmetarleft)
-(define-key org-mode-map (kbd "M-U") 'org-metaup)
-(define-key org-mode-map (kbd "M-D") 'org-metadown)
-(define-key org-mode-map (kbd "C-j") 'org-meta-return)
-(define-key org-mode-map (kbd "M-RET") 'org-insert-todo-heading)
-
 (general-define-key :states '(normal)
                     :keymaps 'org-mode-map
-                    :prefix ","
-                    "a"  'org-archive-subtree
-                    "b"  (lambda () (interactive) (outline-back-to-heading))
-                    "c"  'org-ctrl-c-ctrl-c
-                    "d"  'org-cut-special
-                    "e"  'org-export-dispatch
-                    "fd" 'my/org-bookmark-goto-definition
-                    "ff" 'my/org-goto-file-other-window
-                    "h"  'org-navigate-up/body
-                    "j"  'org-navigate-next/body
-                    "k"  'my/org-store-headline-link-1
-                    "h"  'my/org-store-headline-link
-                    "n"  'org-next-visible-heading
-                    "p"  'org-previous-visible-heading
-                    "s"  'org-save-all-org-buffers
-                    "H"  'org-shiftmetaleft
+                    :prefix "RET"
+                    "ESC" 'keyboard-quit
+                    "RET" 'open-next-line
+                    "DEL" 'open-previous-line
+                    "a"   'org-archive-subtree
+                    "b"   (lambda () (interactive) (outline-back-to-heading))
+                    "c"   'org-ctrl-c-ctrl-c
+                    "d"   'org-cut-special
+                    "e"   'org-export-dispatch
+                    "fd"  'my/org-bookmark-goto-definition
+                    "ff"  'my/org-goto-file-other-window
+                    "h"   'org-navigate-up/body
+                    "j"   'org-navigate-next/body
+                    "k"   'my/org-store-headline-link-1
+                    "h"   'my/org-store-headline-link
+                    "n"   'org-next-visible-heading
+                    "p"   'org-previous-visible-heading
+                    "s"   'org-save-all-org-buffers
+                    "H"   'org-shiftmetaleft
                     "<s-down>"  'org-metadown
                     "<s-right>"  'org-metaright
                     "K"  'org-metaup
@@ -68,11 +59,15 @@
                     "u"  'outline-up-heading
                     "U"  'org-babel-load-file
                     "."  'org-time-stamp-inactive
-                    "RET" 'org-meta-return
                     "&"   'org-mark-ring-goto
                     "-"   'org-ctrl-c-minus
                     "g"   'org-agenda-file-to-front
+                    "$"   'org-insert-prompt
                     )
+
+(defun org-insert-prompt ()
+  (interactive)
+  (insert "$ "))
 
 (defun org-goto-first-child-cmd ()
   (interactive)
