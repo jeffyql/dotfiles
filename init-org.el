@@ -1,6 +1,8 @@
 ;;; mode local keybindings
-(my-space-def 'normal
+(my-local-leader-def
+  :states 'normal
   :keymaps 'org-mode-map
+  "ESC"  'keyboard-quit
   "a"   'org-archive-subtree
   "b"   (lambda () (interactive) (outline-back-to-heading))
   "c"   'org-ctrl-c-ctrl-c

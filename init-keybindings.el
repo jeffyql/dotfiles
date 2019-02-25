@@ -7,7 +7,7 @@
  "/"   'evil-ex-search-forward
  ","   'my/switch-window
  ":"   'evil-ex
- "RET" 'evil-scroll-page-down
+ "SPC" 'evil-scroll-page-down
  "DEL" 'evil-scroll-page-up
  )
 
@@ -16,35 +16,30 @@
  "t"   'universal-argument
  "q"   'my/quit-this-buffer
  "TAB" nil
- "SPC" nil
  ">"   'evil-shift-right-line
  "<"   'evil-shift-left-line
  )
 
 (define-key universal-argument-map "t" 'universal-argument-more)
 
-(define-key evil-normal-state-map (kbd "DEL") 'evil-scroll-page-up)
-
-(global-set-key (kbd "<s-right>") nil)
-(global-set-key (kbd "<s-left>") nil)
-(global-set-key (kbd "<s-up>") nil)
-(global-set-key (kbd "<s-down>") nil)
-
 (general-define-key
  "M-i" 'completion-at-point
  "M-." 'xref-find-definitions
  "M-?" 'xref-find-references
+ "<s-right>" nil
+ "<s-left>" nil
+ "<s-up>" nil
+ "<s-down>" nil
  )
 
-(general-create-definer my-space-def
-  :prefix "SPC"
-  :repeat t)
+(general-create-definer my-return-def
+  :prefix "RET")
 
-(my-space-def 'normal 
-  "DEL" 'open-previous-line
-  "ESC" 'keyboard-quit
-  "RET" 'open-next-line
-  "SPC" 'just-one-space
+(my-return-def
+ :states 'normal
+ "RET"   'open-next-line
+ "DEL"   'open-previous-line
+ "SPC"   'just-one-space
  )
 
 (general-create-definer my-f-def
@@ -122,11 +117,11 @@
   "fw"   'write-file
   "g"    'magit-status
   "i"    'my/switch-indirect-narrow
-  "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
   "q"    'delete-window
   "r"    'delete-other-windows
+  "s"    'my/save-buffer
   "t"    'hydra-toggle/body
   "v"    'er/expand-region
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
@@ -145,9 +140,12 @@
   "T"    'test
   "X"    'shell-command
   ","    'my/org-bookmark
-  "SPC"  'set-mark-command
   "ESC"  'keyboard-quit
   "U"    'kmacro-start-macro
+  )
+
+(general-create-definer my-local-leader-def
+  :prefix "mm"
   )
 
 (general-create-definer my-s-def
@@ -307,9 +305,7 @@
             (local-unset-key ".")
             (local-unset-key (kbd "DEL"))
             ;; (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
-            (define-key evil-normal-state-local-map  (kbd "SPC") 'evil-scroll-down) 
             (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-file) 
-            (define-key evil-normal-state-local-map  (kbd "S-SPC") 'evil-scroll-up)
             (local-set-key   "x" 'dired-mark)
             ))
 
