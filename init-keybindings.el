@@ -7,7 +7,7 @@
  "/"   'evil-ex-search-forward
  ","   'my/switch-window
  ":"   'evil-ex
- "SPC" 'evil-scroll-page-down
+ "RET" 'evil-scroll-page-down
  "DEL" 'evil-scroll-page-up
  )
 
@@ -16,7 +16,7 @@
  "t"   'universal-argument
  "q"   'my/quit-this-buffer
  "TAB" nil
- "RET" nil
+ "SPC" nil
  ">"   'evil-shift-right-line
  "<"   'evil-shift-left-line
  )
@@ -31,20 +31,20 @@
 (global-set-key (kbd "<s-down>") nil)
 
 (general-define-key
- :keymaps '(normal insert emacs)
  "M-i" 'completion-at-point
  "M-." 'xref-find-definitions
  "M-?" 'xref-find-references
  )
 
-(general-create-definer my-return-def
-  :prefix "RET")
+(general-create-definer my-space-def
+  :prefix "SPC"
+  :repeat t)
 
-(my-return-def
-  :states '(normal motion visual) 
-  "RET" 'open-next-line
+(my-space-def 'normal 
   "DEL" 'open-previous-line
   "ESC" 'keyboard-quit
+  "RET" 'open-next-line
+  "SPC" 'just-one-space
  )
 
 (general-create-definer my-f-def
@@ -164,9 +164,10 @@
   "c"    'tmux-ctrl-c
   "d"    'tmux-ctrl-d
   "e"    'tmux-clear-pane
+  "f"    'tmux-minibuffer-run-shell-cmd
   "h"    'tmux-home-dir
   "i"    'tmux-insert-state
-  "j"    'tmux-run-shell
+  "j"    'tmux-ivy-run-shell
   "k"    'hydra-tmux-command-history/body
   "l"    'tmux-swap-pane
   "m"    'tmux-toggle-zoom
@@ -512,7 +513,7 @@
 
 (defhydra hydra-tmux-command-history2 (:body-pre (tmux-begin-cmd-history) :hint nil :foreign-keys warn)
   "
-  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select _escape_: quit  
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select  
 "
   ("DEL" tmux-page-up)
   ("SPC" tmux-page-down)
@@ -524,7 +525,8 @@
 
 (defhydra hydra-tmux-copy-mode (:body-pre (tmux-begin-copy-mode) :hint nil :foreign-keys warn)
   "
-  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _<escape>_: quit "
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up 
+"
   ("DEL" tmux-halfpage-up)
   ("SPC" tmux-halfpage-down)
   ("j" tmux-copy-mode-down)

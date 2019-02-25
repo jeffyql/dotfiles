@@ -1,8 +1,59 @@
-;; Document structure
+;;; mode local keybindings
+(my-space-def 'normal
+  :keymaps 'org-mode-map
+  "a"   'org-archive-subtree
+  "b"   (lambda () (interactive) (outline-back-to-heading))
+  "c"   'org-ctrl-c-ctrl-c
+  "d"   'org-cut-special
+  "e"   'org-export-dispatch
+  "fd"  'my/org-bookmark-goto-definition
+  "ff"  'my/org-goto-file-other-window
+  "h"   'org-navigate-up/body
+  "j"   'org-navigate-next/body
+  "k"   'my/org-store-headline-link-1
+  "h"   'my/org-store-headline-link
+  "l"   'org-insert-link
+  "m"   'org-mac-grab-link
+  "n"   'org-next-visible-heading
+  "p"   'org-previous-visible-heading
+  "s"  'my/org-store-headline-link
+  "H"   'org-shiftmetaleft
+  "K"  'org-metaup
+  "L"  'org-shiftmetaright
+  "o"  'my/org-open-link
+  "i"  'my/org-open-link-this-window
+  "y"  'org-cliplink
+                                        ; "w"  'my/org-retrieve-url-from-point
+  "u"  'outline-up-heading
+  "I"  'my/org-insert-prompt
+  "U"  'org-babel-load-file
+  "."  'org-time-stamp-inactive
+  "&"   'org-mark-ring-goto
+  "-"   'org-ctrl-c-minus
+  "g"   'org-agenda-file-to-front
+  "$"   'org-insert-prompt
+  )
+
+;;; Document structure
 (setq org-M-RET-may-split-line nil)
 
-;; 
+;;; id
 (require 'org-id)
+
+;;; link
+(setq org-file-apps
+      (quote
+       (
+        (auto-mode . emacs)
+        ("\\.mm\\'" . default)
+        ("\\.x?html?\\'" . default)
+        ("\\.pdf\\'" . default)
+        (directory . emacs)
+        ("\\.log\\'" . emacs)
+        ("\\.doc\\'" . default)
+        ("\\.docx\\'" . default)
+      )))
+
 ;(require 'helm-org-rifle)
 
 ;; (setq org-agenda-files (apply 'append
@@ -11,7 +62,7 @@
 ;; 				 (directory-files-recursively
 ;; 				  directory org-agenda-file-regexp))
 ;; 			       '("~/org/db/" "~/org/notes/"))))
-
+;;; snipets
 (defun org-goto-first-child-cmd ()
   (interactive)
   (org-goto-first-child))
@@ -20,50 +71,7 @@
   (interactive)
   (outline-back-to-heading))
 
-(general-define-key :states '(normal)
-                    :keymaps 'org-mode-map
-                    :prefix "RET"
-                    "ESC" 'keyboard-quit
-                    "RET" 'open-next-line
-                    "DEL" 'open-previous-line
-                    "a"   'org-archive-subtree
-                    "b"   (lambda () (interactive) (outline-back-to-heading))
-                    "c"   'org-ctrl-c-ctrl-c
-                    "d"   'org-cut-special
-                    "e"   'org-export-dispatch
-                    "fd"  'my/org-bookmark-goto-definition
-                    "ff"  'my/org-goto-file-other-window
-                    "h"   'org-navigate-up/body
-                    "j"   'org-navigate-next/body
-                    "k"   'my/org-store-headline-link-1
-                    "h"   'my/org-store-headline-link
-                    "n"   'org-next-visible-heading
-                    "p"   'org-previous-visible-heading
-                    "s"   'org-save-all-org-buffers
-                    "H"   'org-shiftmetaleft
-                    "<s-down>"  'org-metadown
-                    "<s-right>"  'org-metaright
-                    "K"  'org-metaup
-                    "L"  'org-shiftmetaright
-                                        ;"b"  'org-previous-link
-                                        ; "f"  'org-next-link
-                                        ; "g"  'org-mark-ring-goto
-                    "m"  'org-mac-grab-link
 
-                    "o"  'my/org-open-link
-                    "i"  'my/org-open-link-this-window
-                    "y"  'org-cliplink
-                    ";"  'my/org-store-headline-link
-                    "'"  'org-insert-link
-                                        ; "w"  'my/org-retrieve-url-from-point
-                    "u"  'outline-up-heading
-                    "U"  'org-babel-load-file
-                    "."  'org-time-stamp-inactive
-                    "&"   'org-mark-ring-goto
-                    "-"   'org-ctrl-c-minus
-                    "g"   'org-agenda-file-to-front
-                    "$"   'org-insert-prompt
-                    )
 
 (defun org-insert-prompt ()
   (interactive)

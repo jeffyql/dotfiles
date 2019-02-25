@@ -67,6 +67,14 @@
   (comint-add-to-input-history cmd-str)
   )
 
+(defun tmux-minibuffer-run-shell-cmd ()
+  (interactive)
+  (let ((map minibuffer-local-map)
+        cmd-str)
+    (define-key map (kbd "TAB") 'my-complete-file-name)
+    (setq cmd-str (read-string "Shell Cmd: "))
+    (tmux-send-selection cmd-str)))
+
 (defun tmux-edit-and-send (cmd-string)
   (let ((cmd (read-string ": " cmd-string)))
     (tmux-send-selection cmd)))
@@ -101,7 +109,7 @@
     map)
   "Keymap used for completing tmux shell commands in minibuffer.")
 
-(defun tmux-run-shell (&optional arg)
+(defun tmux-ivy-run-shell (&optional arg)
   (interactive "P")
   (unless (file-exists-p comint-input-ring-file-name)
     (write-region "" nil comint-input-ring-file-name))
@@ -443,11 +451,8 @@
   (let ((num-list (tmux-get-pane-or-window-number-list t)))
     (if (= (length num-list) 1)
         (error "pane with id 1 doesn't exist"))
-    (setq tmux-saved-pane-0-height (tmux-pane-height "0"))
     (if (tmux-window-zoomed)
-        (setq tmux-pane-0-zoomed t)
-      (setq tmux-pane-0-zoomed nil))
-    (tmux-run-command "resize-pane" "-t" "0" "-y" "5")
+        (tmux-unzoom-window))
     (tmux-run-command-on-pane-1 "copy-mode")))
 
 (defun tmux-quit-copy-mode ()
@@ -455,21 +460,21 @@
   (tmux-run-command "resize-pane" "-t" "0" "-y" tmux-saved-pane-0-height)
   (tmux-send-key "q"))
 
-(defun tmux-page-down ()
-  (interactive)
-  (tmux-send-key "M-Down"))
-
 (defun tmux-page-up ()
   (interactive)
   (tmux-send-key "PageUp"))
 
-(defun tmux-halfpage-down ()
+(defun tmux-page-down ()
   (interactive)
   (tmux-send-key "PageDown"))
 
 (defun tmux-halfpage-up ()
   (interactive)
   (tmux-send-key "M-Up"))
+
+(defun tmux-halfpage-down ()
+  (interactive)
+  (tmux-send-key "M-Down"))
 
 (defun tmux-copy-mode-down ()
   (interactive)

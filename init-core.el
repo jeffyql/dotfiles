@@ -5,12 +5,6 @@
 (add-hook 'after-init-hook
           (lambda () (setq debug-on-error nil)))
 
-(require 'package)
-(setq package-enable-at-startup nil)
-(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-(package-initialize)
-
 (setq bookmark-default-file "~/db/bookmarks")
 
 (require 'dired-x)
@@ -236,8 +230,6 @@ has been displayed in this session."
   )
 
 (use-package org
-  :ensure org-plus-contrib
-  :pin org
   :ensure t
   )
 
@@ -268,16 +260,6 @@ has been displayed in this session."
 (defun my/evil-end-of-line ()
   (interactive)
   (evil-end-of-line))
-
-(defun my/insert-newline-below ()
-  (interactive)
-  (if (eq this-command last-command)
-      (evil-insert-newline-below)
-    (ignore)))
-
-(defun my/insert-newline-below-2 ()
-  (interactive)
-  (evil-insert-newline-below))
 
 (defun my/kill-ring-save-symbol-at-point ()
   "Kill word under cursor"
@@ -356,10 +338,12 @@ has been displayed in this session."
   )
 
 ;; todo, remove ace dependenc
-(defun my/switch-window ()
-  (interactive)
+(defun my/switch-window (&optional arg)
+  (interactive "P")
   (if (one-window-p)
-      (my/split-window-horizontally)
+      (if (equal arg '(4))
+         (my/split-window-vertically)
+        (my/split-window-horizontally))
     (other-window 1)))
 
 (defun move-splitter-left ()
@@ -404,7 +388,7 @@ has been displayed in this session."
 
 (defun my/counsel-recentf-misc ()
   (interactive)
-  (let ((filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$\\|\\.el$\\|\\.el.gz$\\|\\.json$\\|\\.log$\\|\\.org$\\|\\.py$\\|\\.sh$\\|\\.xml$\\|Dockerfile\\|\\.[cs]ql$")
+  (let ((filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$\\|\\.el$\\|\\.el.gz$\\|\\.json$\\|\\.log$\\|\\.org$\\|\\.py$\\|\\.sh$\\|\\.txt$\\|\\.xml$\\|Dockerfile\\|\\.[cs]ql$")
         (file-list (mapcar #'substring-no-properties recentf-list)))
     (ivy-read "Select file: " (cl-remove-if  (lambda (x) (string-match filter x)) file-list)
               :action (lambda (f)
@@ -484,6 +468,10 @@ has been displayed in this session."
   (interactive "P")
   (my/counsel-recentf-filtered "\\.sh$" projectile))
 
+(defun my/counsel-recentf-txt (&optional projectile)
+  (interactive "P")
+  (my/counsel-recentf-filtered "\\.txt$" projectile))
+
 (defun my/counsel-recentf-xml (&optional projectile)
   (interactive "P")
   (my/counsel-recentf-filtered "\\.xml$" projectile))
@@ -495,5 +483,14 @@ has been displayed in this session."
   (interactive "P")
     (setq current-prefix-arg nil)
     (counsel-rg (and (equal arg '(4)) (symbol-at-point) (thing-at-point 'symbol))))
+
+(defun my/ffap ()
+  (interactive)
+  (let* ((file (ffap-string-at-point))
+         (dir (ivy-dired-history--read-file-name "directory: "))
+         (file-name (concat dir file)))
+    (when (file-exists-p file-name)
+      (ivy-dired-history--update dir)
+      (find-file file-name))))
 
 (provide 'init-core)

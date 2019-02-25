@@ -89,6 +89,12 @@
 
 ;(use-package gruvbox-theme :ensure t)
 
+(use-package outshine
+  :ensure t
+  :config
+  (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+  )
+
 (use-package persistent-scratch
   :ensure t
   :config

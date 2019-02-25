@@ -10,8 +10,15 @@
 (setq my-org-reminders-file (concat my-org-dir "reminder/reminders.org"))
 (setq my-org-code-bookmark-file (concat my-org-notes-dir "emacs_links.org"))
 (setq my-org-checklist-file (concat my-org-db-dir "general/checklist.org"))
-(add-to-list 'load-path "~/config/emacs")
-(add-to-list 'load-path my-site-lisp-dir)
+(add-to-list 'load-path (expand-file-name "~/site-lisp"))
+
+
+(require 'package)
+(setq package-enable-at-startup nil)
+;(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+(package-initialize)
+
 (require 'init-core)
 (require 'init-keybindings)
 (require 'init-lib)
