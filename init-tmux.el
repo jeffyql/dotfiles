@@ -21,9 +21,16 @@
 (defun tmux-run-key (&rest args)
   (apply 'tmux-run-command-on-pane-1 "send-keys" (nconc args '("C-m"))))
 
-(defun tmux-send-region ()
-  (interactive)
-  (let* (beg end cmd-str)
+(defun tmux-set-buffer (str)
+  (funcall 'tmux-run-command "set-buffer" "-b" "abuf" str))
+
+(defun tmux-paste-buffer ()
+  (funcall 'tmux-run-command-on-pane-1 "paste-buffer" "-p" "-b" "abuf")
+  (tmux-send-key "C-m"))
+
+(defun tmux-send-region (&optional arg)
+  (interactive "P")
+  (let* (beg end cmd-str no-history)
     (cond
      ((eq major-mode 'python-mode)
       (unless (equal "python" (substring (tmux-pane-1-login-type) 0 6))
@@ -32,7 +39,9 @@
      (mark-active
       (setq beg (region-beginning) 
             end (region-end))
-      (deactivate-mark t))
+      (deactivate-mark t)
+      (unless (= (line-number-at-pos beg) (line-number-at-pos end))
+        (setq no-history t)))
      ((and (eq major-mode 'org-mode) (org-in-item-p))
       (save-excursion
         (beginning-of-line)
@@ -45,15 +54,22 @@
               end (line-end-position))))
      (t
       (save-excursion
-        (back-to-indentation)
-        (setq beg (point)
+        (setq beg (line-beginning-position)
               end (line-end-position)))))
-    (setq cmd-str (buffer-substring-no-properties beg end)
-          cmd-str (replace-regexp-in-string ";\\'" "\\\\;" cmd-str))
-    (tmux-run-key cmd-str)
+    (setq cmd-str (buffer-substring-no-properties beg end))
+    (setq cmd-str (replace-regexp-in-string ";\\'" "\\\\;" cmd-str))
+    (if (equal arg '(4))
+        (tmux-edit-and-send cmd-str)
+      (tmux-set-buffer cmd-str)
+      (tmux-paste-buffer))
     (unless comint-input-ring
       (comint-read-input-ring 'silent))
-    (comint-add-to-input-history cmd-str)
+    (unless no-history
+      (comint-add-to-input-history cmd-str))
+    
+    (when (eq major-mode 'python-mode)
+      (forward-line)
+      (python-util-forward-comment 1))
     ))
 
 (defun tmux-dired-run-file ()
@@ -72,11 +88,12 @@
   (let ((map minibuffer-local-map)
         cmd-str)
     (define-key map (kbd "TAB") 'my-complete-file-name)
+    (define-key map (kbd "M-y") 'insert-current-file-name-at-point)
     (setq cmd-str (read-string "Shell Cmd: "))
     (tmux-send-selection cmd-str)))
 
 (defun tmux-edit-and-send (cmd-string)
-  (let ((cmd (read-string ": " cmd-string)))
+  (let ((cmd (read-string "$ " cmd-string)))
     (tmux-send-selection cmd)))
 
 (defun tmux-edit-and-send-action ()
@@ -384,13 +401,6 @@
         (message "unknown tramp method")
         )))))
 
-(defun tmux-fzf-cd ()
-  (interactive)
-  (tmux-send-key "cd ")
-  (tmux-send-key "C-t")
-  (tmux-send-char t)
-  )
-
 (defun tmux-down ()
   (interactive)
   (tmux-send-key "Down"))
@@ -408,30 +418,33 @@
   (tmux-down)
   )
 
-(defun tmux-last-dir ()
-  (interactive)
-  (tmux-run-key "cd -")
-  )
+(defun tmux-run-shell-cmd (prepend cmd-str)
+  (let ((cmd (concat (if (tmux-python-console-p) prepend)
+                     cmd-str)))
+    (tmux-run-key cmd)))
 
 (defun  tmux-ls ()
   (interactive)
-  (tmux-run-key "ls -lrt")
-  )
+  (tmux-run-shell-cmd "!" "ls -lrt"))
 
 (defun tmux-pwd ()
   (interactive)
-  (tmux-run-key "pwd")
+  (tmux-run-shell-cmd "!" "pwd")
+)
+
+(defun tmux-home-dir ()
+  (interactive)
+  (tmux-run-shell-cmd "%" "cd")
+  )
+
+(defun tmux-last-dir ()
+  (interactive)
+  (tmux-run-shell-cmd "%" "cd -")
   )
 
 (defun tmux-up-dir ()
   (interactive)
-  (tmux-run-key "cd ..")
-  )
-
-(defun tmux-home-dir ()
-  (interactive)
-  (tmux-run-key "cd ")
-  )
+  (tmux-run-shell-cmd "%" "cd .."))
 
 (defun tmux-begin-cmd-history ()
   (tmux-run-key "history 200")
@@ -452,7 +465,9 @@
     (if (= (length num-list) 1)
         (error "pane with id 1 doesn't exist"))
     (if (tmux-window-zoomed)
-        (tmux-unzoom-window))
+        (error "window is zoomed"))
+    (setq tmux-saved-pane-0-height (tmux-pane-height "0"))
+    (tmux-run-command "resize-pane" "-t" "0" "-y" "5")
     (tmux-run-command-on-pane-1 "copy-mode")))
 
 (defun tmux-quit-copy-mode ()
@@ -549,17 +564,6 @@
   (tmux-split-window "-v")
   )
 
-(defun tmux-last-window (&optional keep-display)
-  (interactive "P")
-  (tmux-run-command "last-window")
-  (unless keep-display
-    (tmux-emacs-frame-show-current-buffer (tmux-window-id))))
-
-(defun tmux-select-window-num ()
-  (let* ((num-list (tmux-get-pane-or-window-number-list))
-         (prompt "Select Window:"))
-    (my/select-num num-list prompt)))
-
 (defun tmux-emacs-frame-show-current-buffer (window-id)
   (let* ((buffer (current-buffer))
          (frame-name (concat "tmux-" window-id))
@@ -576,6 +580,18 @@
         (unless (or (eq window1 window)
                     (not (window-deletable-p window1)))
 	      (delete-window window1))))))
+
+(defun tmux-last-window (&optional keep-display)
+  (interactive "P")
+  (tmux-run-command "last-window")
+  (unless keep-display
+    (tmux-emacs-frame-show-current-buffer (tmux-window-id))))
+
+(defun tmux-next-window (&optional keep-display)
+  (interactive "P")
+  (tmux-run-command "next-window")
+  (unless keep-display
+    (tmux-emacs-frame-show-current-buffer (tmux-window-id))))
 
 (defun tmux-select-window (window-id &optional keep-display)
     (unless keep-display
@@ -705,5 +721,7 @@
     (tmux-run-key (concat "tail -f " fn))
     ))
 
+(defun tmux-python-console-p ()
+  (equal "python" (tmux-pane-1-login-type)))
 
 (provide 'init-tmux)

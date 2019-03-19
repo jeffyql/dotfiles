@@ -15,6 +15,7 @@
  :states '(motion normal visual)
  "t"   'universal-argument
  "q"   'my/quit-this-buffer
+ "RET" nil ;; leader key
  "TAB" nil
  ">"   'evil-shift-right-line
  "<"   'evil-shift-left-line
@@ -35,18 +36,20 @@
 (general-create-definer my-return-def
   :prefix "RET")
 
-(my-return-def
- :states 'normal
- "RET"   'open-next-line
- "DEL"   'open-previous-line
- "SPC"   'just-one-space
- )
+(my-return-def '(motion normal visual)
+  "<escape>"  'keyboard-quit
+  "RET"   'open-next-line
+  "DEL"   'open-previous-line
+  "SPC"   'just-one-space
+  "c"     'insert-prompt-symbol
+)
 
 (general-create-definer my-f-def
   :prefix "f")
 (my-f-def
-  :states '(normal motion visual) 
+  :states '(normal motion visual)
   :keymaps 'override
+  "<escape>"  'keyboard-quit
   "a"    'my/ffap
   "c"    'counsel-command-history
   "e"    'my/evil-end-of-line
@@ -61,10 +64,11 @@
   "m"    'my/swiper
   "o"    'my/counsel-rg-org-search
   "o"    'hydra-org-find/body
-  "pa"   'projectile-add-known-project 
-  "pk"   'projectile-kill-buffers
-  "pr"   'projectile-remove-known-project
-  "ps"   'counsel-projectile-switch-project
+  "p"    'projectile-find-file
+  ;; "pa"   'projectile-add-known-project
+  ;; "pk"   'projectile-kill-buffers
+  ;; "pr"   'projectile-remove-known-project
+  ;; "ps"   'counsel-projectile-switch-project
   "r"    'counsel-mark-ring
   "s"    'hydra-shell-cmd/body
   "s"    'ivy-switch-buffer
@@ -72,7 +76,6 @@
   "u"    'counsel-bookmark
   "w"    'tmux-select-active-window
   "y"    'counsel-yank-pop
-  "ESC"  'keyboard-quit
   ",c"    'my/swiper-all-c++
   "."    'ivy-resume
   )
@@ -80,8 +83,9 @@
 (general-create-definer my-g-def
   :prefix "g")
 (my-g-def
-  :states '(normal motion visual) 
+  :states '(normal motion visual)
   :keymaps 'override
+  "<escape>"  'keyboard-quit
   "a"    'evil-first-non-blank
   "b"    'evil-scroll-line-to-bottom
   "c"    'new-scratch-buffer-new-window
@@ -100,7 +104,6 @@
   ","    'pop-to-mark-command
   "."    'evil-scroll-line-to-center
   "G"    (lambda () (interactive) (find-file my-org-checklist-file))
-  "ESC"  'keyboard-quit
   "SPC"  'my/org-goto-reminders
   "RET"  'hydra-org-cycle-agenda-files/body
   )
@@ -108,20 +111,22 @@
 (general-create-definer my-m-def
   :prefix "m")
 (my-m-def
-  :states '(normal motion visual) 
+  :states '(normal motion visual)
   :keymaps 'override
+  "<escape>"  'keyboard-quit
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
   "c"    'hydra-misc/body
-  "e"    'my/split-window-vertically
-  "fw"   'write-file
+  "d"    'my/delete-window
+  "e"    'hydra-edit/body
+  "f"    nil    ;;key f is reserved as a leader for local maps
   "g"    'magit-status
   "i"    'my/switch-indirect-narrow
+  "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
-  "q"    'delete-window
-  "r"    'delete-other-windows
-  "s"    'my/save-buffer
+  "q"    'query-replace
+  "s"    nil    ;;key s is reserved as a leader for lsp
   "t"    'hydra-toggle/body
   "v"    'er/expand-region
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
@@ -144,16 +149,26 @@
   "U"    'kmacro-start-macro
   )
 
-(general-create-definer my-local-leader-def
-  :prefix "mm"
+(general-create-definer my-mf-def
+  :prefix "mf"
+  )
+
+(my-mf-def
+  :states '(normal motion visual)
+  :keymaps 'override
+  "d"   'xref-find-definitions
+  "h"   'lsp-describe-thing-at-point
+  "r"   'xref-find-references
+  "x"   'lsp-restart-workspace
   )
 
 (general-create-definer my-s-def
   :prefix "s")
 (my-s-def
-  :states '(normal motion visual) 
+  :states '(normal motion visual)
   :keymaps 'override
   ","    'tmux-ls
+  "."    'tmux-next-window
   "'"    'tmux-display-pane-numbers
   ";"    'hydra-tmux-command-history2/body
   "-"    'tmux-last-dir
@@ -168,12 +183,13 @@
   "j"    'tmux-ivy-run-shell
   "k"    'hydra-tmux-command-history/body
   "l"    'tmux-swap-pane
-  "m"    'tmux-toggle-zoom
+  "m"    'hydra-tmux-copy-mode/body
   "n"    'tmux-send-no
+  "o"    'tmux-zoom-head-and-emacs-window
   "p"    'tmux-pwd
   "q"    'tmux-quit
   "r"    'tmux-rename-window
-  "s"    'tmux-send-region
+  "s"    nil       ;;key s is reserved for local maps
   "t"    'hydra-tmux-window-config/body
   "u"    'tmux-up-dir
   "v"    'tmux-terminal-view
@@ -182,7 +198,7 @@
   "z"    'tmux-ctrl-z
   "D"    'tmux-kill-pane
   "N"    'tmux-new-window
-  "SPC"  'hydra-tmux-copy-mode/body
+  "SPC"  'my/tmux-toggle-zoom
   "RET"  'tmux-ctrl-m
   "0"     'tmux-select-window-0
   "1"     'tmux-select-window-1
@@ -194,14 +210,6 @@
   "7"     'tmux-select-window-7
   "8"     'tmux-select-window-8
   "9"     'tmux-select-window-9
-
-  ;; "h"    'tmux-history-cmd
-  ;; "j"    'tmux-goto-active-pane
-  ;; "n"    'tmux-rename-window
-  ;; "t"    'tmux-terminal-view
-  ;; "_"    'tmux-move-pane-vertical
-  ;; "|"    'tmux-move-pane-horizantal
-  ;; ","    'tmux-ls
   )
 
 ;;;; enable escape key
@@ -227,27 +235,27 @@
 (with-eval-after-load "popup"
   (define-key popup-menu-keymap  [escape] 'keyboard-quit))
 
-;;;;; escape key for terminal mode 
-(defvar my-esc-map nil)
+;;;;; escape key for terminal mode
+;; (defvar my-esc-map nil)
 
-(defun my-esc (map)
-  (if (and (let ((keys (this-single-command-keys)))
-             (and (> (length keys) 0)
-                  (= (aref keys (1- (length keys))) ?\e)))
-           (sit-for 0.1))
-      [escape]
-    map))
+;; (defun my-esc (map)
+;;   (if (and (let ((keys (this-single-command-keys)))
+;;              (and (> (length keys) 0)
+;;                   (= (aref keys (1- (length keys))) ?\e)))
+;;            (sit-for 0.1))
+;;       [escape]
+;;     map))
 
-(defun my-init-esc ()
-  (let ((term (frame-terminal)))
-    (when (and (equal (terminal-live-p term) 't)
-               (not (terminal-parameter term 'my-esc-map)))
-      (let ((my-esc-map (lookup-key input-decode-map [?\e])))
-        (set-terminal-parameter term 'my-esc-map my-esc-map)
-        (define-key input-decode-map [?\e]
-          `(menu-item "" ,my-esc-map :filter ,#'my-esc))))))
+;; (defun my-init-esc ()
+;;   (let ((term (frame-terminal)))
+;;     (when (and (equal (terminal-live-p term) 't)
+;;                (not (terminal-parameter term 'my-esc-map)))
+;;       (let ((my-esc-map (lookup-key input-decode-map [?\e])))
+;;         (set-terminal-parameter term 'my-esc-map my-esc-map)
+;;         (define-key input-decode-map [?\e]
+;;           `(menu-item "" ,my-esc-map :filter ,#'my-esc))))))
 
-(add-hook 'minibuffer-setup-hook 'my-init-esc)
+;; (add-hook 'minibuffer-setup-hook 'my-init-esc)
 
 (add-hook 'compilation-mode-hook
           (lambda ()
@@ -305,7 +313,7 @@
             (local-unset-key ".")
             (local-unset-key (kbd "DEL"))
             ;; (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
-            (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-file) 
+            (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-file)
             (local-set-key   "x" 'dired-mark)
             ))
 
@@ -329,7 +337,7 @@
 (define-key org-mode-map (kbd "M-h") 'outline-up-heading)
 (define-key org-mode-map (kbd "M-j") 'org-forward-heading-same-level)
 (define-key org-mode-map (kbd "M-k") 'org-backward-heading-same-level)
-(define-key org-mode-map (kbd "M-l") 'org-goto-first-child)
+(define-key org-mode-map (kbd "M-l") 'org-goto-first-child-cmd)
 (define-key org-mode-map (kbd "M-m") '(lambda () (interactive) (outline-back-to-heading)))
 (define-key org-mode-map (kbd "M-RET") 'org-meta-return)
 
@@ -414,6 +422,13 @@
   ("v" revert-buffer "revert")
   )
 
+(defhydra hydra-edit ()
+  ("a" align "align")
+  ("c" comment-dwim "comment dwim")
+  ("d" delete-trailing-whitespace "delete trailing WS")
+  ("j" just-one-space "one space")
+  )
+
 (defhydra hydra-recentf (:color blue)
   ("c" my/counsel-recentf-c "c++")
   ("d" my/counsel-recentf-dockerfile "dockerfile")
@@ -442,6 +457,7 @@
   ("a" counsel-apropos "apropos")
   ("f" counsel-describe-function "function")
   ("k" describe-key "key binding")
+  ("m" describe-mode "mode")
   ("v" counsel-describe-variable "variable")
   )
 
@@ -452,13 +468,14 @@
   ("a"  my-clear "comint clear buffer")
   ("b"  my/bookmark-set "set bookmark")
   ("c"  compile "compile")
-  ("d"  comment-dwim "comment dwim")
+  ("f"  write-file "write file")
   ("g"  grep "grep")
   ("l"  org-store-link "org link")
   ("k"  kill "kill ps")
   ("o"  org-capture "org capture")
   ("p"  display-ps "display ps")
   ("r"  recompile "recompile")
+  ("q"  query-replace "query-replace")
   ("s"  hydra-shell-cmd/body "shell cmd")
   ("t"  display-top "display top")
   ("v"  hydra-vc/body)
@@ -469,7 +486,7 @@
 
 (defhydra hydra-org-find (:color blue)
   ("f" my/find-org-file "file search")
-  ("o" my/counsel-rg-org-search "heading search") 
+  ("o" my/counsel-rg-org-search "heading search")
   )
 
 (defhydra hydra-shell-cmd (:color blue :hint nil)
@@ -480,7 +497,7 @@
   ("p" ps)
   ("t" top :exit nil)
   )
- 
+
 (defhydra hydra-tabbar-navigation ()
   ("a" my/tb-add-to-group "add" :exit t)
   ("c" my/tb-change-group-description "description")
@@ -509,7 +526,7 @@
 
 (defhydra hydra-tmux-command-history2 (:body-pre (tmux-begin-cmd-history) :hint nil :foreign-keys warn)
   "
-  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select  
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select
 "
   ("DEL" tmux-page-up)
   ("SPC" tmux-page-down)
@@ -521,13 +538,13 @@
 
 (defhydra hydra-tmux-copy-mode (:body-pre (tmux-begin-copy-mode) :hint nil :foreign-keys warn)
   "
-  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up 
+  ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _<escape>_: exit
 "
   ("DEL" tmux-halfpage-up)
   ("SPC" tmux-halfpage-down)
   ("j" tmux-copy-mode-down)
   ("k" tmux-copy-mode-up)
-  ("<escape>" tmux-quit :exit t)
+  ("<escape>" tmux-quit-copy-mode :exit t)
   )
 
 (defhydra hydra-tmux-window-config (:body-pre (setq tmux-selected-pane "0"))
@@ -539,10 +556,10 @@
   ("-"  tmux-split-window-vertical)
   ("|" tmux-split-window-horizontal)
   )
-   
+
 (defhydra hydra-toggle (:color blue)
   "toggle"
-  ("a"   auto-revert-tail-mode  "auto revert")         
+  ("a"   auto-revert-tail-mode  "auto revert")
   ("b"   tabbar-mode "tabbar")
   ("c"   toggle-buffer-coding-system "coding system")
   ("d"   display-line-numbers-mode "line number")
@@ -554,7 +571,7 @@
   ("t"   toggle-truncate-lines "truncate lines")
   ("v"   visual-line-mode  "visual line")
   ("w"   whitespace-mode  "whitespace")
-  ) 
+  )
 
 (defhydra hydra-vc (:color blue)
   ("=" vc-diff "diff")
@@ -569,20 +586,20 @@
   ("h" move-splitter-left)
   ("l" move-splitter-right)
   )
-   
+
 (defhydra hydra-window-down (:body-pre (move-splitter-down))
   ("j" move-splitter-down)
   ("k" move-splitter-up)
   )
-   
+
 (defhydra hydra-window-up (:body-pre (move-splitter-up))
   ("j" move-splitter-down)
   ("k" move-splitter-up)
   )
-   
+
 (defhydra hydra-window-right (:body-pre (move-splitter-right))
   ("h" move-splitter-left)
   ("l" move-splitter-right)
   )
-   
+
 (provide 'init-keybindings)

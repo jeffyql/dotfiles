@@ -2,6 +2,11 @@
 
 (use-package company
   :ensure t
+  :config
+  (define-key company-mode-map (kbd "M-j") 'company-select-next)
+  (define-key company-mode-map (kbd "M-k") 'company-select-previous)
+  (define-key company-mode-map (kbd "M-s") 'company-search-candidates)
+  (add-hook 'python-mode-hook 'company-mode)
   )
 
 (use-package command-log-mode :ensure t)
@@ -20,66 +25,14 @@
   :ensure t
   :init
   (progn
-    (when (fboundp 'define-fringe-bitmap)
-      (define-fringe-bitmap 'my-flycheck-fringe-indicator
-        (vector #b00000000
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00011100
-                #b00111110
-                #b00111110
-                #b00111110
-                #b00011100
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00000000
-                #b00000000)))
-
-    (let ((bitmap 'my-flycheck-fringe-indicator))
-      (flycheck-define-error-level 'error
-        :severity 2
-        :overlay-category 'flycheck-error-overlay
-        :fringe-bitmap bitmap
-        :fringe-face 'flycheck-fringe-error)
-      (flycheck-define-error-level 'warning
-        :severity 1
-        :overlay-category 'flycheck-warning-overlay
-        :fringe-bitmap bitmap
-        :fringe-face 'flycheck-fringe-warning)
-      (flycheck-define-error-level 'info
-        :severity 0
-        :overlay-category 'flycheck-info-overlay
-        :fringe-bitmap bitmap
-        :fringe-face 'flycheck-fringe-info))
-
-    ;; toggle flycheck window
-    (defun spacemacs/toggle-flycheck-error-list ()
-      "Toggle flycheck's error list window.
- If the error list is visible, hide it.  Otherwise, show it."
-      (interactive)
-      (-if-let (window (flycheck-get-error-list-window))
-          (quit-window nil window)
-        (flycheck-list-errors)))
-
-    (defun spacemacs/goto-flycheck-error-list ()
-      "Open and go to the error list buffer."
-      (interactive)
-      (unless (get-buffer-window (get-buffer flycheck-error-list-buffer))
-        (flycheck-list-errors)
-        (switch-to-buffer-other-window flycheck-error-list-buffer)))
-
+    ;;(add-hook 'python-mode-hook 'flycheck-mode)
     ))
 
-(use-package flycheck-pos-tip
-  :ensure t
-  :init
-  (with-eval-after-load 'flycheck
-    (flycheck-pos-tip-mode)))
+;; (use-package flycheck-pos-tip
+;;   :ensure t
+;;   :init
+;;   (with-eval-after-load 'flycheck
+;;     (flycheck-pos-tip-mode)))
 
 (use-package flyspell-correct :ensure t)
 
@@ -102,31 +55,6 @@
     (persistent-scratch-setup-default)
     ))
 
-(use-package projectile
-  :ensure t
-  :config
-  (progn
-    (use-package counsel-projectile :ensure t)
-    (counsel-projectile-mode 1)
-
-    (defun my/counsel-projectile-switch-project-action-dired (project)
-      "Open ‘dired’ at the root of the project."
-      (let ((projectile-switch-project-action
-	         (lambda ()
-	           (projectile-dired))))
-        (counsel-projectile-switch-project-by-name project)))
-
-    (counsel-projectile-modify-action
-     'counsel-projectile-switch-project-action
-     '((add ("." my/counsel-projectile-switch-project-action-dired
-	         "open ‘dired’ at the root of the project")
-	        1)))
-
-    (setq projectile-completion-system (quote ivy)
-          projectile-generic-command "fd . -0"
-          projectile-git-command "fd . -0")
-    )
-  )
 
 (use-package rainbow-delimiters
   :ensure t

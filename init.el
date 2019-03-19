@@ -1,11 +1,3 @@
-(setq my-home-dir "/Users/jeff/")
-(setq my-mib-dir (concat my-home-dir "mib/"))
-(setq my-org-dir (concat my-mib-dir "org/"))
-(setq my-backup-dir (concat my-home-dir "backup/"))
-(setq my-site-lisp-dir (concat my-home-dir "site-lisp/"))
-(add-to-list 'load-path (expand-file-name "~/site-lisp"))
-
-
 (require 'package)
 (setq package-enable-at-startup nil)
 ;(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
@@ -15,6 +7,7 @@
 (require 'init-core)
 (require 'init-keybindings)
 (require 'init-lib)
+(require 'init-local-info)
 (require 'init-elisp)
 (require 'init-packages)
 (require 'init-ui)
@@ -26,7 +19,6 @@
 ;; (require 'init-magit)
 ;; (require 'init-work)
 ;; (require 'init-docker)
-;; (require 'init-tmux)
 (require 'init-snippets)
 ;; (require 'init-c++)
 ;; (require 'init-tabbar)

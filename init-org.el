@@ -1,9 +1,9 @@
 ;;; mode local keybindings
-(my-local-leader-def
+(my-mf-def
   :states 'normal
   :keymaps 'org-mode-map
-  "ESC"  'keyboard-quit
-  "a"   'org-archive-subtree
+  "$"   'org-archive-subtree
+  "a"   'org-attach
   "b"   (lambda () (interactive) (outline-back-to-heading))
   "c"   'org-ctrl-c-ctrl-c
   "d"   'org-cut-special
@@ -15,7 +15,7 @@
   "k"   'my/org-store-headline-link-1
   "h"   'my/org-store-headline-link
   "l"   'org-insert-link
-  "m"   'org-mac-grab-link
+  "m"   'org-mac-chrome-insert-frontmost-url
   "n"   'org-next-visible-heading
   "p"   'org-previous-visible-heading
   "s"  'my/org-store-headline-link
@@ -25,7 +25,6 @@
   "o"  'my/org-open-link
   "i"  'my/org-open-link-this-window
   "y"  'org-cliplink
-                                        ; "w"  'my/org-retrieve-url-from-point
   "u"  'outline-up-heading
   "I"  'my/org-insert-prompt
   "U"  'org-babel-load-file
@@ -191,11 +190,10 @@
                           (swiper--cleanup))
                 :caller 'my/counsel-rg-org-search))))
 
-(defun my/find-org-file (&optional open-another-window)
-  (interactive "P")
-  (let* ((ffip-project-root my-org-dir)
-         (ffip-rust-fd-extra-opts "-e org"))
-    (ffip open-another-window)))
+(defun my/find-org-file ()
+  (interactive)
+  (let* ((projectile-project-root my-org-dir))
+    (projectile-find-file)))
 
 ;;find . -name *.org -printf "%T+\t%p\n" | sort
 ;;find %s ! -readable -prune -o -iname \"%s*\" -print"
@@ -330,7 +328,7 @@
 
 (defun my/org-goto-reminders ()
   (interactive)
-  (find-file my-org-reminders-file)
+  (find-file my-org-todo-file)
   (goto-char (point-min))
   (org-overview)
   )

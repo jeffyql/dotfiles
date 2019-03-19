@@ -233,6 +233,18 @@ has been displayed in this session."
   :ensure t
   )
 
+(use-package projectile
+  :custom
+  (projectile-completion-system 'ivy)
+  (projectile-generic-command "fd . -0")
+  (projectile-git-command "fd . -0")
+  )
+
+(use-package counsel-projectile
+ :after (counsel projectile)
+ :config
+ (counsel-projectile-mode 1))
+
 (use-package which-key
   :ensure t
   :config
@@ -278,13 +290,14 @@ has been displayed in this session."
   (interactive "P")
   (let ((cur-buf (current-buffer)))
     (cond
-     ((equal (buffer-name) "*scratch*")
+     ((or (equal (buffer-name) "*scratch*")
+          (equal (buffer-name) "*Messages*"))
       (quit-window))
-     ((equal (buffer-name) "*Messages*")
-      (quit-window))
-     ;; dired or help buffers
+     ;; dired or other non-file buffers
      ((and (not buffer-file-name) (not (buffer-base-buffer)))
-      (kill-this-buffer))
+      (if (one-window-p)
+          (kill-this-buffer)
+        (kill-buffer-and-window)))
      ((buffer-modified-p) ;; buffer is not saved
       (message "buffer modified"))
      ((cl-loop for buf in (buffer-list)
@@ -323,6 +336,12 @@ has been displayed in this session."
         (throw 'done t)))
     (message "no more candidate buffer")))
 
+(defun my/delete-window (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (delete-window)
+    (delete-other-windows)))
+
 (defun my/split-window-horizontally ()
   (interactive)
   (split-window-horizontally)
@@ -340,11 +359,15 @@ has been displayed in this session."
 ;; todo, remove ace dependenc
 (defun my/switch-window (&optional arg)
   (interactive "P")
-  (if (one-window-p)
-      (if (equal arg '(4))
-         (my/split-window-vertically)
-        (my/split-window-horizontally))
-    (other-window 1)))
+  (if (equal arg '(4))
+      (if (one-window-p)
+          (my/split-window-vertically)
+        (if (= (count-windows) 2)
+            (toggle-window-split)
+          (other-window 1)))
+    (if (one-window-p)
+        (my/split-window-horizontally)
+      (other-window 1))))
 
 (defun move-splitter-left ()
   "Move window splitter left."
