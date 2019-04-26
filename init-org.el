@@ -19,6 +19,7 @@
   "n"   'org-next-visible-heading
   "p"   'org-previous-visible-heading
   "s"  'my/org-store-headline-link
+  "t"  'org-insert-structure-template
   "H"   'org-shiftmetaleft
   "K"  'org-metaup
   "L"  'org-shiftmetaright

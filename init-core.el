@@ -284,8 +284,6 @@ has been displayed in this session."
           (message "%s" symbol))
       (message "no symbol is under the cursor"))))
 
-(setq large-file-size (* 1024 1024))
-
 (defun my/quit-this-buffer (&optional arg)
   (interactive "P")
   (let ((cur-buf (current-buffer)))
@@ -314,11 +312,11 @@ has been displayed in this session."
       (save-some-buffers)
       (call-interactively 'save-buffer)))
 
-(defun my/swiper (&optional arg)
+(defun my/swiper-isearch (&optional arg)
   (interactive "P")
   (let ((str (if (equal arg '(4))
                  (and (symbol-at-point) (thing-at-point 'symbol)))))
-    (swiper str)))
+    (swiper-isearch str)))
 
 
 (defun my/toggle-buffer ()

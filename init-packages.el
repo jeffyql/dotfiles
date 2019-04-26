@@ -78,6 +78,17 @@
 
 (use-package tabbar :ensure t)
 
+(use-package treemacs
+  :ensure t
+  :init
+  (setq treemacs-no-load-time-warnings t 
+        treemacs-no-delete-other-windows nil)
+  :config
+  (progn
+    (setq treemacs-no-png-images t)
+    (set-face-attribute 'hl-line nil :background "#333333")
+    ))
+
 (use-package undo-tree :ensure t)
 
 (use-package whitespace :ensure t)
@@ -85,5 +96,7 @@
 (use-package winum :ensure t)
 
 (use-package xterm-color :ensure t)
+
+(use-package yasnippet :ensure t)
 
 (provide 'init-packages)

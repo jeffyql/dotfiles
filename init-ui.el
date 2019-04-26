@@ -10,6 +10,8 @@
 
 (use-package doom-modeline
       :ensure t
+      :init
+      (setq doom-modeline-env-enable-python t)
       :hook (after-init . doom-modeline-mode))
 
 (provide 'init-ui)

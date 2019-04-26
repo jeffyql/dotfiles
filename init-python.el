@@ -2,16 +2,10 @@
    :init
    (custom-set-variables '(conda-anaconda-home "~/miniconda3"))
    :config
-   (conda-env-autoactivate-mode t)
+   ;(conda-env-autoactivate-mode t)
    )
 
 (use-package python-x)
-
-(setq python-shell-interpreter "jupyter"
-      python-shell-interpreter-args "console --simple-prompt"
-      python-shell-prompt-detect-failure-warning nil)
-
-(setq python-shell-completion-native-enable nil)
 
 (define-key python-mode-map (kbd "M-n") 'python-forward-fold-or-section)
 (define-key python-mode-map (kbd "M-p") 'python-backward-fold-or-section)

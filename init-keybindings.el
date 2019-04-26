@@ -1,5 +1,5 @@
 (general-define-key
- :states '(motion normal visual)
+ :states '(normal)
  :keymaps 'override
  "i"   'my/evil-insert
  "z"   'my/toggle-buffer
@@ -21,6 +21,12 @@
  "<"   'evil-shift-left-line
  )
 
+(general-define-key
+ :states 'visual
+ "v"  'er/expand-region
+ "u"  'er/contract-region
+ )
+
 (define-key universal-argument-map "t" 'universal-argument-more)
 
 (general-define-key
@@ -36,7 +42,7 @@
 (general-create-definer my-return-def
   :prefix "RET")
 
-(my-return-def '(motion normal visual)
+(my-return-def '(normal)
   "<escape>"  'keyboard-quit
   "RET"   'open-next-line
   "DEL"   'open-previous-line
@@ -61,7 +67,7 @@
   "j"    'hydra-recentf/body
   "k"    'rg
   "l"    'my/counsel-rg-at-point
-  "m"    'my/swiper
+  "m"    'my/swiper-isearch
   "o"    'my/counsel-rg-org-search
   "o"    'hydra-org-find/body
   "p"    'projectile-find-file
@@ -94,8 +100,9 @@
   "g"    'evil-goto-first-line
   "h"    (lambda () (interactive) (dired "~"))
   "i"    'ibuffer
+  "j"    'hydra-scroll-line-up/body
+  "k"    'hydra-scroll-line-down/body
   "l"    'evil-goto-line
-  "j"    'tmux-goto-dir
   "n"    'evil-next-match
   "o"    'hydra-org-goto/body
   "s"    '(lambda () (interactive) (switch-to-buffer "*scratch*"))
@@ -119,16 +126,16 @@
   "c"    'hydra-misc/body
   "d"    'my/delete-window
   "e"    'hydra-edit/body
-  "f"    nil    ;;key f is reserved as a leader for local maps
+  "f"    nil    ;;f key is reserved as major mode leader 
   "g"    'magit-status
   "i"    'my/switch-indirect-narrow
   "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
   "q"    'query-replace
-  "s"    nil    ;;key s is reserved as a leader for lsp
+  "r"    'xref-find-references
+  "s"    'xref-find-definitions
   "t"    'hydra-toggle/body
-  "v"    'er/expand-region
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "w"    'my/split-window-horizontally
   "x"    'counsel-M-x
@@ -153,15 +160,6 @@
   :prefix "mf"
   )
 
-(my-mf-def
-  :states '(normal motion visual)
-  :keymaps 'override
-  "d"   'xref-find-definitions
-  "h"   'lsp-describe-thing-at-point
-  "r"   'xref-find-references
-  "x"   'lsp-restart-workspace
-  )
-
 (general-create-definer my-s-def
   :prefix "s")
 (my-s-def
@@ -178,6 +176,7 @@
   "d"    'tmux-ctrl-d
   "e"    'tmux-clear-pane
   "f"    'tmux-minibuffer-run-shell-cmd
+  "g"    'tmux-sync-location-with-emacs
   "h"    'tmux-home-dir
   "i"    'tmux-insert-state
   "j"    'tmux-ivy-run-shell
@@ -424,9 +423,9 @@
 
 (defhydra hydra-edit ()
   ("a" align "align")
-  ("c" comment-dwim "comment dwim")
-  ("d" delete-trailing-whitespace "delete trailing WS")
-  ("j" just-one-space "one space")
+  ("e" delete-trailing-whitespace "delete trailing WS")
+  ("m" comment-dwim "comment dwim")
+  ("SPC" just-one-space "one space")
   )
 
 (defhydra hydra-recentf (:color blue)
@@ -434,15 +433,16 @@
   ("d" my/counsel-recentf-dockerfile "dockerfile")
   ("e" my/counsel-recentf-el "el")
   ("f" projectile-recentf)
-  ("j" my/counsel-recentf-json "json")
   ("k" my/counsel-recentf-cmake "cmake")
   ("l" my/counsel-recentf-log "log")
   ("m" my/counsel-recentf-misc "misc")
+  ("n" my/counsel-recentf-json "json")
   ("o" my/counsel-recentf-org "org")
   ("p" my/counsel-recentf-py "python")
   ("q" my/counsel-recentf-sql-cql "[sc]ql")
   ("s" my/counsel-recentf-sh "sh")
   ("t" my/counsel-recentf-txt "txt")
+  ("v" my/counsel-recentf-java "java")
   ("x" my/counsel-recentf-xml "xml")
   ("r" counsel-recentf "recent")
   ("," my/counsel-recentf-set-file-extension "set designated")
@@ -487,6 +487,18 @@
 (defhydra hydra-org-find (:color blue)
   ("f" my/find-org-file "file search")
   ("o" my/counsel-rg-org-search "heading search")
+  )
+
+(defhydra hydra-scroll-line-down (:body-pre (evil-scroll-line-down 1))
+  ("j" evil-scroll-line-up)
+  ("k" evil-scroll-line-down)
+  ("ESC" nil :exit t)
+  )
+
+(defhydra hydra-scroll-line-up (:body-pre (evil-scroll-line-up 1))
+  ("j" evil-scroll-line-up)
+  ("k" evil-scroll-line-down)
+  ("ESC" nil :exit t)
   )
 
 (defhydra hydra-shell-cmd (:color blue :hint nil)
