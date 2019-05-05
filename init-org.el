@@ -1,4 +1,10 @@
 ;;; mode local keybindings
+(my-m-def
+  :states 'normal
+  :keymaps 'org-mode-map
+  "c"   'org-ctrl-c-ctrl-c
+  )
+
 (my-mf-def
   :states 'normal
   :keymaps 'org-mode-map
@@ -56,14 +62,6 @@
         ("\\.docx\\'" . default)
       )))
 
-;(require 'helm-org-rifle)
-
-;; (setq org-agenda-files (apply 'append
-;; 			      (mapcar
-;; 			       (lambda (directory)
-;; 				 (directory-files-recursively
-;; 				  directory org-agenda-file-regexp))
-;; 			       '("~/org/db/" "~/org/notes/"))))
 ;;; snipets
 (defun org-goto-first-child-cmd ()
   (interactive)
@@ -72,8 +70,6 @@
 (defun outline-back-to-heading-cmd ()
   (interactive)
   (outline-back-to-heading))
-
-
 
 (defun org-insert-prompt ()
   (interactive)
@@ -87,10 +83,6 @@
   (interactive)
   (outline-back-to-heading))
 
-
-(add-to-list 'org-file-apps '(directory . emacs) t)
-(add-to-list 'org-file-apps '("\\.log\\'" . emacs) t)
-(add-to-list 'org-file-apps '("\\.docx\\'" . default) t)
 
 ;; save archive file
 (add-hook 'org-archive-hook 'org-save-all-org-buffers)
@@ -156,72 +148,24 @@
   (interactive)
   (org-capture nil "i"))
 
-(defun my/org-counsel-rg-function (string)
-  (if (< (length string) 3)
-      (counsel-more-chars)
-    (let ((default-directory (ivy-state-directory ivy-last))
-          (base-command (concat "rg -i --no-heading --line-number --color never -g \"*.org\" %s ."))
-          (regex (counsel-unquote-regex-parens
-                  (concat "^\\*+ +.*?" (ivy--regex string)))))
-                                        ; also works: (ivy--regex (concat "^\\* " string))))))
-      (let ((rg-cmd (format base-command
-                            (concat " -- "
-                                    (shell-quote-argument regex)))))
-        (counsel--async-command rg-cmd))
-      nil))
-  )
-
-(defun my/counsel-rg-org-search (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (counsel-rg nil my-org-dir)
-    (counsel-require-program (car (split-string counsel-rg-base-command)))
-    (ivy-set-prompt 'counsel-rg counsel-prompt-function)
-    (let ((default-directory my-org-dir))
-      (ivy-read "org heading search: "
-                (lambda (string)
-                  (my/org-counsel-rg-function string))
-                :initial-input nil
-                :dynamic-collection t
-                :keymap counsel-ag-map
-                :history 'counsel-git-grep-history
-                :action #'counsel-git-grep-action
-                :unwind (lambda ()
-                          (counsel-delete-process)
-                          (swiper--cleanup))
-                :caller 'my/counsel-rg-org-search))))
+(defun my/ivy-regex-org-heading (str)
+  (ivy--regex-ignore-order (concat "^\\* " str)))
 
 (defun my/find-org-file ()
   (interactive)
   (let* ((projectile-project-root my-org-dir))
     (projectile-find-file)))
 
-;;find . -name *.org -printf "%T+\t%p\n" | sort
-;;find %s ! -readable -prune -o -iname \"%s*\" -print"
-;; (defun counsel-find-function (str)
-;;   (let ((cmd
-;;             (concat (format "find %s " my-org-dir) "-name '*.org' -printf \"%T+\\t%p\n\""))))
-;;       (message "%s" cmd)
-;;       (counsel--async-command cmd))
-;;     '("" "working..."))
+(defun my/counsel-rg-org-search (&optional arg)
+  (interactive "P")
+  (if (equal arg '(16))
+      (my/find-org-file)
+    (let ((ivy-re-builders-alist
+           (if (equal arg '(4))
+               '((t . ivy--regex-ignore-order))
+             '((t . my/ivy-regex-org-heading)))))
+      (counsel-rg nil my-org-dir nil))))
 
-;;;###autoload
-;; (defun counsel-find (&optional initial-input)
-;;   "Use GNU find, counsel and ivy  to present all paths
-;;    in a directory tree that match the REGEX input"
-;;   (interactive)
-;;   (ivy-read "Find: " #'counsel-find-function
-;;             :initial-input initial-input
-;;             :dynamic-collection t
-;;             :history 'counsel-find-history
-;;             :action (lambda (file)
-;;                       (with-ivy-window
-;;                         (when file
-;;                           (find-file file))))
-;;             :unwind #'counsel-delete-process
-;;             :caller 'counsel-find))
-
-(counsel-set-async-exit-code 'counsel-find 1 "Nothing found")
 (defun my/org-open-link-this-window ()
   (interactive)
   (let ((org-link-frame-setup

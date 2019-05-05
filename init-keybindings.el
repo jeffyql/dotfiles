@@ -21,10 +21,14 @@
  "<"   'evil-shift-left-line
  )
 
+;; v now is like a leader key
 (general-define-key
  :states 'visual
- "v"  'er/expand-region
+ "a"  'mark-whole-buffer
+ "i"  'evil-visual-line
+ "o"  'evil-visual-block
  "u"  'er/contract-region
+ "v"  'er/expand-region
  )
 
 (define-key universal-argument-map "t" 'universal-argument-more)
@@ -53,9 +57,9 @@
 (general-create-definer my-f-def
   :prefix "f")
 (my-f-def
-  :states '(normal motion visual)
+  :states 'normal
   :keymaps 'override
-  "<escape>"  'keyboard-quit
+  "ESC"  'keyboard-quit
   "a"    'my/ffap
   "c"    'counsel-command-history
   "e"    'my/evil-end-of-line
@@ -69,7 +73,6 @@
   "l"    'my/counsel-rg-at-point
   "m"    'my/swiper-isearch
   "o"    'my/counsel-rg-org-search
-  "o"    'hydra-org-find/body
   "p"    'projectile-find-file
   ;; "pa"   'projectile-add-known-project
   ;; "pk"   'projectile-kill-buffers
@@ -91,7 +94,7 @@
 (my-g-def
   :states '(normal motion visual)
   :keymaps 'override
-  "<escape>"  'keyboard-quit
+  "ESC"  'keyboard-quit
   "a"    'evil-first-non-blank
   "b"    'evil-scroll-line-to-bottom
   "c"    'new-scratch-buffer-new-window
@@ -118,12 +121,11 @@
 (general-create-definer my-m-def
   :prefix "m")
 (my-m-def
-  :states '(normal motion visual)
+  :states 'normal
   :keymaps 'override
-  "<escape>"  'keyboard-quit
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
-  "c"    'hydra-misc/body
+  "c"    'comment-line
   "d"    'my/delete-window
   "e"    'hydra-edit/body
   "f"    nil    ;;f key is reserved as major mode leader 
@@ -134,9 +136,9 @@
   "o"    'occur
   "q"    'query-replace
   "r"    'xref-find-references
-  "s"    'xref-find-definitions
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
+  "v"    'hydra-misc/body
   "w"    'my/split-window-horizontally
   "x"    'counsel-M-x
   "z"    'delete-frame
@@ -156,8 +158,20 @@
   "U"    'kmacro-start-macro
   )
 
+(my-m-def
+  :states 'normal
+  :keymaps 'prog-mode-map
+  "s"    'xref-find-definitions
+  )
+  
 (general-create-definer my-mf-def
   :prefix "mf"
+  )
+
+(my-mf-def
+  :states 'normal
+  :keymaps 'override
+  "ESC"  'keyboard-quit
   )
 
 (general-create-definer my-s-def
@@ -415,13 +429,12 @@
   ("e" ediff-buffers "ediff")
   ("i" ibuffer  "ibuffer")
   ("k" kill-other-buffers "kill others (unmodifed)")
-  ("m" mark-whole-buffer "mark whole buffer")
   ("n" rename-buffer "rename")
   ("s" revert-buffer-with-coding-system "change end of line coding")
   ("v" revert-buffer "revert")
   )
 
-(defhydra hydra-edit ()
+(defhydra hydra-edit (:color blue)
   ("a" align "align")
   ("e" delete-trailing-whitespace "delete trailing WS")
   ("m" comment-dwim "comment dwim")
@@ -482,11 +495,6 @@
   ("x"  docker-init "docker init")
   ("C"  my/compilation-command "custom compile")
   ("T"  run-UT-case "run UT")
-  )
-
-(defhydra hydra-org-find (:color blue)
-  ("f" my/find-org-file "file search")
-  ("o" my/counsel-rg-org-search "heading search")
   )
 
 (defhydra hydra-scroll-line-down (:body-pre (evil-scroll-line-down 1))

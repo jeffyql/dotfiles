@@ -198,7 +198,6 @@ has been displayed in this session."
     (exec-path-from-shell-initialize))
   )
 
-
 (use-package expand-region :ensure t)
 
 (use-package general :ensure t)
@@ -318,7 +317,6 @@ has been displayed in this session."
                  (and (symbol-at-point) (thing-at-point 'symbol)))))
     (swiper-isearch str)))
 
-
 (defun my/toggle-buffer ()
   "Toggle buffers, ignoring certain ones."
   (interactive)
@@ -340,11 +338,6 @@ has been displayed in this session."
       (delete-window)
     (delete-other-windows)))
 
-(defun my/split-window-horizontally ()
-  (interactive)
-  (split-window-horizontally)
-  (select-window (next-window))
-  (switch-to-buffer (other-buffer))
   )
 
 (defun my/split-window-vertically ()
