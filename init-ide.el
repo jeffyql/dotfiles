@@ -6,7 +6,7 @@
           ) . lsp)
   :init
   (setq
-   ;lsp-prefer-flymake nil
+   lsp-prefer-flymake nil
         lsp-eldoc-enable-hover nil
         lsp-auto-guess-root t
         lsp-ui-sideline-enable nil)

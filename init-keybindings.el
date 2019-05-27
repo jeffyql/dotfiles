@@ -5,7 +5,7 @@
  "z"   'my/toggle-buffer
  ";"   'avy-goto-word-or-subword-1
  "/"   'evil-ex-search-forward
- ","   'my/switch-window
+ ","   'other-window
  ":"   'evil-ex
  "SPC" 'evil-scroll-page-down
  "DEL" 'evil-scroll-page-up
@@ -17,6 +17,8 @@
  "q"   'my/quit-this-buffer
  "RET" nil ;; leader key
  "TAB" nil
+ "("   'kmacro-start-macro-or-insert-counter
+ ")"   'kmacro-end-or-call-macro
  ">"   'evil-shift-right-line
  "<"   'evil-shift-left-line
  )
@@ -62,23 +64,27 @@
   "ESC"  'keyboard-quit
   "a"    'my/ffap
   "c"    'counsel-command-history
-  "e"    'my/evil-end-of-line
+  "e"    'rg
   "f"    'counsel-find-file
   "d"    'dired
   "g"    'grep
   "h"    'hydra-help/body
   "i"    'counsel-imenu
-  "j"    'hydra-recentf/body
-  "k"    'rg
+  "j"    nil
+  "jd"   'my/projectile-find-dir
+  "je"   'my/counsel-recentf-el 
+  "jl"   'my/counsel-recentf-log 
+  "jo"   'my/counsel-recentf-org 
+  "jp"   'my/projectile-select-project
+  "js"   'my/counsel-recentf-sh 
+  "jx"   'my/counsel-recentf-xml 
+  "jq"   'my/counsel-recentf-sql-cql 
+  "jr"   'counsel-recentf 
+  "k"   'my/projectile-recentf
   "l"    'my/counsel-rg-at-point
-  "m"    'my/swiper-isearch
+  "m"    'my/swiper
   "o"    'my/counsel-rg-org-search
   "p"    'projectile-find-file
-  ;; "pa"   'projectile-add-known-project
-  ;; "pk"   'projectile-kill-buffers
-  ;; "pr"   'projectile-remove-known-project
-  ;; "ps"   'counsel-projectile-switch-project
-  "r"    'counsel-mark-ring
   "s"    'hydra-shell-cmd/body
   "s"    'ivy-switch-buffer
   "t"    'my/ripgrep-this-file
@@ -139,7 +145,7 @@
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "v"    'hydra-misc/body
-  "w"    'my/split-window-horizontally
+  "w"    'my/split-window
   "x"    'counsel-M-x
   "z"    'delete-frame
   "B"    'balance-windows
@@ -180,9 +186,9 @@
   :states '(normal motion visual)
   :keymaps 'override
   ","    'tmux-ls
-  "."    'tmux-next-window
+  "."    'hydra-tmux-combo/body
   "'"    'tmux-display-pane-numbers
-  ";"    'hydra-tmux-command-history2/body
+  ";"    'hydra-tmux-command-history/body
   "-"    'tmux-last-dir
   "_"    'tmux-split-window-vertical
   "b"    'tmux-capture-pane
@@ -190,39 +196,36 @@
   "d"    'tmux-ctrl-d
   "e"    'tmux-clear-pane
   "f"    'tmux-minibuffer-run-shell-cmd
-  "g"    'tmux-sync-location-with-emacs
+  "g"    'tmux-cd-default-directory
   "h"    'tmux-home-dir
   "i"    'tmux-insert-state
   "j"    'tmux-ivy-run-shell
-  "k"    'hydra-tmux-command-history/body
-  "l"    'tmux-swap-pane
   "m"    'hydra-tmux-copy-mode/body
-  "n"    'tmux-send-no
-  "o"    'tmux-zoom-head-and-emacs-window
+  "n"    'tmux-n
+  "o"    'tmux-swap-pane
   "p"    'tmux-pwd
-  "q"    'tmux-quit
+  "q"    'tmux-q
   "r"    'tmux-rename-window
-  "s"    nil       ;;key s is reserved for local maps
+  "s"    'tmux-send-region
   "t"    'hydra-tmux-window-config/body
-  "u"    'tmux-up-dir
-  "v"    'tmux-terminal-view
   "w"    'tmux-last-window
-  "y"    'tmux-send-yes
+  "y"    'tmux-y
   "z"    'tmux-ctrl-z
   "D"    'tmux-kill-pane
+  "K"    'tmux-kill-window
   "N"    'tmux-new-window
-  "SPC"  'my/tmux-toggle-zoom
+  "SPC"  'tmux-space
   "RET"  'tmux-ctrl-m
-  "0"     'tmux-select-window-0
-  "1"     'tmux-select-window-1
-  "2"     'tmux-select-window-2
-  "3"     'tmux-select-window-3
-  "4"     'tmux-select-window-4
-  "5"     'tmux-select-window-5
-  "6"     'tmux-select-window-6
-  "7"     'tmux-select-window-7
-  "8"     'tmux-select-window-8
-  "9"     'tmux-select-window-9
+  "0"    'tmux-select-window-0
+  "1"    'tmux-select-window-1
+  "2"    'tmux-select-window-2
+  "3"    'tmux-select-window-3
+  "4"    'tmux-select-window-4
+  "5"    'tmux-select-window-5
+  "6"    'tmux-select-window-6
+  "7"    'tmux-select-window-7
+  "8"    'tmux-select-window-8
+  "9"    'tmux-select-window-9
   )
 
 ;;;; enable escape key
@@ -441,31 +444,6 @@
   ("SPC" just-one-space "one space")
   )
 
-(defhydra hydra-recentf (:color blue)
-  ("c" my/counsel-recentf-c "c++")
-  ("d" my/counsel-recentf-dockerfile "dockerfile")
-  ("e" my/counsel-recentf-el "el")
-  ("f" projectile-recentf)
-  ("k" my/counsel-recentf-cmake "cmake")
-  ("l" my/counsel-recentf-log "log")
-  ("m" my/counsel-recentf-misc "misc")
-  ("n" my/counsel-recentf-json "json")
-  ("o" my/counsel-recentf-org "org")
-  ("p" my/counsel-recentf-py "python")
-  ("q" my/counsel-recentf-sql-cql "[sc]ql")
-  ("s" my/counsel-recentf-sh "sh")
-  ("t" my/counsel-recentf-txt "txt")
-  ("v" my/counsel-recentf-java "java")
-  ("x" my/counsel-recentf-xml "xml")
-  ("r" counsel-recentf "recent")
-  ("," my/counsel-recentf-set-file-extension "set designated")
-  ("." my/counsel-recentf-designated "designated")
-  )
-
-(defhydra hydra-projectile-recentf (:color blue)
-  ("c" my/counsel-projectile-recentf-c "c++")
-  )
-
 (defhydra hydra-help (:color blue)
   ("a" counsel-apropos "apropos")
   ("f" counsel-describe-function "function")
@@ -533,18 +511,48 @@
   ("ESC" nil :exit t)
   )
 
-(defhydra hydra-tmux-command-history (:body-pre (tmux-command-history-prev) :hint nil)
-  "
-  _k_: prev _j_: next _c_: cancel _e_: clear _RET_: run
-"
-  ("c" tmux-ctrl-c :exit t)
-  ("e" tmux-clear-pane)
-  ("j" tmux-command-history-next)
-  ("k" tmux-command-history-prev)
-  ("RET" tmux-ctrl-m :exit t)
-  )
-
-(defhydra hydra-tmux-command-history2 (:body-pre (tmux-begin-cmd-history) :hint nil :foreign-keys warn)
+;; (defhydra hydra-tmux-combo ()
+;;   ("c"   tmux-ctrl-c)
+;;   ("d"   tmux-ctrl-d)
+;;   ("q"   tmux-q)
+;;   ("j"   tmux-command-history-next)
+;;   ("k"   tmux-command-history-prev)
+;;   "b"   tmux-capture-pane
+;;   "e"   tmux-clear-pane
+;;   "g"   tmux-cd-default-directory
+;;   "h"   tmux-home-dir
+;;   "o"   tmux-swap-pane
+;;   "n"   tmux-n
+;;   "p"   tmux-pwd
+;;   "u"   tmux-up-dir
+;;   "w"   tmux-last-window
+;;   "y"   tmux-y
+;;   "z"   tmux-ctrl-z
+;;   " "   tmux-
+;;   " "   tmux-
+;;   " "   tmux-
+;;   " "   tmux-
+;;   " "   tmux-
+;;   "D"   tmux-kill-pane
+;;   "N"   tmux-new-window
+;;   "RET" tmux-ctrl-m
+;;   "SPC" tmux-space
+;;   "-"   tmux-last-dir
+;;   "."   tmux-next-window
+;;   ","   tmux-ls
+;;   "_"   tmux-split-window-vertical
+;;   "0"   tmux-select-window-0
+;;   "1"   tmux-select-window-1
+;;   "2"   tmux-select-window-2
+;;   "3"   tmux-select-window-3
+;;   "4"   tmux-select-window-4
+;;   "5"   tmux-select-window-5
+;;   "6"   tmux-select-window-6
+;;   "7"   tmux-select-window-7
+;;   "8"   tmux-select-window-8
+;;   "9"   tmux-select-window-9
+;;   )
+(defhydra hydra-tmux-command-history (:body-pre (tmux-begin-cmd-history) :hint nil :foreign-keys warn)
   "
   ;; _DEL_: page up _SPC_: page down _j_: down _k_: up _RET_: select
 "
@@ -583,6 +591,7 @@
   ("b"   tabbar-mode "tabbar")
   ("c"   toggle-buffer-coding-system "coding system")
   ("d"   display-line-numbers-mode "line number")
+  ("f"   toggle-frame-fullscreen "full screen")
   ("m"   toggle-view-tmux "view tmux")
   ("o"   origami-mode "origomi")
   ("p"   rainbow-delimiters-mode  "rainbow delimiters")

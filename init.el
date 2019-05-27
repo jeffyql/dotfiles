@@ -30,5 +30,7 @@
 
 ;; (require 'config-macros)
 ;; (require 'config-python)
+(add-to-list 'load-path my-tmux-integration-dir)
+(require 'tmux-head)
 (provide 'init)
 

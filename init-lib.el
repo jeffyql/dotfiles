@@ -108,6 +108,7 @@
   (my/counsel-recentf-filtered "\\.org$" projectile))
 
 (setq my-c++-project-root nil)
+
 (defun my/counsel-recentf-c (&optional projectile)
   (interactive "P")
   (if projectile

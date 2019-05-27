@@ -13,21 +13,9 @@
 (require 'which-func)
 (require 'winner)
 
-(when (eq system-type 'darwin)
-      (set-default-font "-*-Hack-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))
-
-
 (setq custom-file "~/.emacs-custom.el")
 
 (electric-pair-mode 1)
-
-(menu-bar-mode -1)
-
-(when (fboundp 'tool-bar-mode)
-  (tool-bar-mode -1))
-
-(when (fboundp 'scroll-bar-mode)
-  (scroll-bar-mode -1))
 
 (fset 'yes-or-no-p 'y-or-n-p)
 
@@ -52,7 +40,6 @@
                 require-final-newline t
                 tab-always-indent 'complete
                 tab-width 4
-                ring-bell-function 'ignore
                 )
 
 (setq imenu-auto-rescan t
@@ -233,16 +220,20 @@ has been displayed in this session."
   )
 
 (use-package projectile
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
   :custom
   (projectile-completion-system 'ivy)
   (projectile-generic-command "fd . -0")
   (projectile-git-command "fd . -0")
   )
-
-(use-package counsel-projectile
- :after (counsel projectile)
- :config
- (counsel-projectile-mode 1))
+;; (use-package projectile
+;;   :bind-keymap
+;;   ("C-c p" . projectile-command-map))
+;; (use-package counsel-projectile
+;;  :after (counsel projectile)
+;;  :config
+;;  (counsel-projectile-mode 1))
 
 (use-package which-key
   :ensure t
@@ -311,11 +302,11 @@ has been displayed in this session."
       (save-some-buffers)
       (call-interactively 'save-buffer)))
 
-(defun my/swiper-isearch (&optional arg)
+(defun my/swiper (&optional arg)
   (interactive "P")
   (let ((str (if (equal arg '(4))
                  (and (symbol-at-point) (thing-at-point 'symbol)))))
-    (swiper-isearch str)))
+    (swiper str)))
 
 (defun my/toggle-buffer ()
   "Toggle buffers, ignoring certain ones."
@@ -338,6 +329,11 @@ has been displayed in this session."
       (delete-window)
     (delete-other-windows)))
 
+(defun my/split-window-horizontally ()
+  (interactive)
+  (split-window-horizontally)
+  (select-window (next-window))
+  (switch-to-buffer (other-buffer))
   )
 
 (defun my/split-window-vertically ()
@@ -347,18 +343,11 @@ has been displayed in this session."
   (switch-to-buffer (other-buffer))
   )
 
-;; todo, remove ace dependenc
-(defun my/switch-window (&optional arg)
+(defun my/split-window (&optional arg)
   (interactive "P")
   (if (equal arg '(4))
-      (if (one-window-p)
-          (my/split-window-vertically)
-        (if (= (count-windows) 2)
-            (toggle-window-split)
-          (other-window 1)))
-    (if (one-window-p)
-        (my/split-window-horizontally)
-      (other-window 1))))
+      (my/split-window-horizontally)
+    (my/split-window-vertically)))
 
 (defun move-splitter-left ()
   "Move window splitter left."
@@ -506,5 +495,45 @@ has been displayed in this session."
     (when (file-exists-p file-name)
       (ivy-dired-history--update dir)
       (find-file file-name))))
+
+(setq my-default-projectile-project nil)
+
+(defun my/projectile-select-project ()
+  (interactive)
+  (let* ((dir (read-directory-name "Select default project: " "~/" nil t))
+         (project-root (projectile-project-root dir)))
+    (unless project-root
+      (error "not a project"))
+    (setq my-default-projectile-project project-root)))
+
+(defun my/projectile-find-dir (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (let ((projectile-switch-project-action 'projectile-find-dir))
+        (projectile-switch-project))
+    (unless my-default-projectile-project
+      (my/projectile-select-project))
+    (let ((default-directory my-default-projectile-project))
+      (projectile-find-dir))))
+
+(defun my/projectile-find-file (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (let ((projectile-switch-project-action 'projectile-find-file))
+        (projectile-switch-project))
+    (unless my-default-projectile-project
+      (my/projectile-select-project))
+    (let ((default-directory my-default-projectile-project))
+      (projectile-find-file))))
+
+(defun my/projectile-recentf (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (let ((projectile-switch-project-action 'projectile-recentf))
+        (projectile-switch-project))
+    (unless my-default-projectile-project
+      (my/projectile-select-project))
+    (let ((default-directory my-default-projectile-project))
+      (projectile-recentf))))
 
 (provide 'init-core)
