@@ -536,4 +536,18 @@ has been displayed in this session."
     (let ((default-directory my-default-projectile-project))
       (projectile-recentf))))
 
+(defun my/goto-indirect-narrow-at-point ()
+  (interactive)
+  (let ((buffer-names (mapcar (lambda (b) (buffer-name b)) (buffer-list)))
+        (func-name (thing-at-point 'symbol))
+        buf-name)
+    (unless func-name
+      (error "no symbol found at point"))
+    (setq buf-name (seq-find (lambda (s) (and (equal ">><<" (substring s 0 4))
+                                              (string-match-p (regexp-quote func-name) s)))
+                             buffer-names))
+    (unless (stringp buf-name)
+      (error "buffer with name containing the substring at point is not found"))
+    (switch-to-buffer buf-name)))
+
 (provide 'init-core)
