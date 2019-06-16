@@ -5,7 +5,7 @@
  "z"   'my/toggle-buffer
  ";"   'avy-goto-word-or-subword-1
  "/"   'evil-ex-search-forward
- ","   'other-window
+ ","   'my/select-window
  ":"   'evil-ex
  "SPC" 'evil-scroll-page-down
  "DEL" 'evil-scroll-page-up
@@ -70,16 +70,16 @@
   "g"    'grep
   "h"    'hydra-help/body
   "i"    'counsel-imenu
-  "j"    nil
-  "jd"   'my/projectile-find-dir
-  "je"   'my/counsel-recentf-el 
-  "jl"   'my/counsel-recentf-log 
-  "jo"   'my/counsel-recentf-org 
-  "jp"   'my/projectile-select-project
-  "js"   'my/counsel-recentf-sh 
-  "jx"   'my/counsel-recentf-xml 
-  "jq"   'my/counsel-recentf-sql-cql 
-  "jr"   'counsel-recentf 
+  "r"    nil
+  "rd"   'my/projectile-find-dir
+  "re"   'my/counsel-recentf-el 
+  "rl"   'my/counsel-recentf-log 
+  "ro"   'my/counsel-recentf-org 
+  "rp"   'my/projectile-select-project
+  "rs"   'my/counsel-recentf-sh 
+  "rx"   'my/counsel-recentf-xml 
+  "rq"   'my/counsel-recentf-sql-cql 
+  "rr"   'counsel-recentf 
   "k"   'my/projectile-recentf
   "l"    'my/counsel-rg-at-point
   "m"    'my/swiper
@@ -140,8 +140,8 @@
   "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
-  "q"    'query-replace
-  "r"    'xref-find-references
+  "q"    'delete-window
+  "r"    'open-next-line
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "v"    'hydra-misc/body

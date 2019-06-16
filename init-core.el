@@ -1,5 +1,6 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
 
+;;; better default
 (setq debug-on-error t)
 
 (add-hook 'after-init-hook
@@ -102,8 +103,6 @@ has been displayed in this session."
 
 (add-hook 'diff-mode-hook 'read-only-mode)
 
-(winner-mode 1)
-
 (setq scroll-margin 0
       scroll-conservatively 100000
       scroll-preserve-screen-position 1)
@@ -132,16 +131,11 @@ has been displayed in this session."
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
 
+;;; config packages
 ;; Bootstrap `use-package'
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
-
-(use-package ace-window
-  :ensure t
-  :config
-  (setq aw-scope 'frame
-        aw-swap-invert t))
 
 (use-package avy
   :ensure t
@@ -172,20 +166,22 @@ has been displayed in this session."
     (use-package evil-ediff :ensure t)
     (use-package evil-matchit :ensure t)
     )
-
-  (use-package undo-tree
-    :ensure t
-    :diminish undo-tree-mode)
 )
 
-(use-package exec-path-from-shell
+(use-package evil-surround
   :ensure t
   :config
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
-  )
+  (global-evil-surround-mode 1)
+  (evil-define-key 'visual evil-surround-mode-map "S" 'evil-surround-region))
 
 (use-package expand-region :ensure t)
+
+(use-package flycheck
+  :ensure t
+  :init
+  (progn
+    ;;(add-hook 'python-mode-hook 'flycheck-mode)
+    ))
 
 (use-package general :ensure t)
 
@@ -203,7 +199,6 @@ has been displayed in this session."
     (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
     (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
     )
-  (use-package ivy-hydra :ensure t)
   )
 
 (use-package ivy-dired-history
@@ -217,6 +212,12 @@ has been displayed in this session."
 
 (use-package org
   :ensure t
+  )
+
+(use-package outshine
+  :ensure t
+  :config
+  (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
   )
 
 (use-package projectile
@@ -235,17 +236,72 @@ has been displayed in this session."
 ;;  :config
 ;;  (counsel-projectile-mode 1))
 
+(use-package rainbow-delimiters
+  :ensure t
+  :config
+  (progn
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+    ))
+
+(use-package undo-tree :ensure t)
+
 (use-package which-key
   :ensure t
   :config
   (which-key-mode)
   )
 
+(use-package whitespace :ensure t)
+
+(use-package winum
+  :ensure t
+  :config
+  (winum-mode))
+
+;;; copy/paste
+
+(defun my/kill-ring-save-symbol-at-point ()
+  "Kill word under cursor"
+  (interactive)
+  (let (symbol)
+    (if (symbol-at-point)
+        (progn
+          (setq symbol (thing-at-point 'symbol))
+          (kill-new symbol)
+          (message "%s" symbol))
+      (message "no symbol is under the cursor"))))
+
+;;; buffer/editing
+
 (defun my/evil-insert ()
   (interactive)
   (if (memq major-mode evil-emacs-state-modes)
       (evil-emacs-state 1)
     (call-interactively 'evil-insert)))
+
+(defun my/quit-this-buffer (&optional arg)
+  (interactive "P")
+  (let ((cur-buf (current-buffer)))
+    (cond
+     ((eq major-mode 'dired-mode)
+      (kill-buffer))
+     ((or (not buffer-file-name)
+          (cl-loop for buf in (buffer-list)
+                   if (eq cur-buf (buffer-base-buffer buf))
+               return t))
+      (quit-window))
+     ((buffer-modified-p) ;; buffer is not saved
+      (message "buffer modified"))
+     (t  ;; unmodified file buffers
+        (kill-buffer)))))
+
+(defun my/save-buffer (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (save-some-buffers)
+      (call-interactively 'save-buffer)))
+
+;;; search/navigation
 
 (defun my/dired-up-directory ()
   (interactive)
@@ -259,54 +315,16 @@ has been displayed in this session."
     (call-interactively 'evil-ex-search-word-forward))
   (beginning-of-thing 'symbol))
 
-(defun my/evil-end-of-line ()
-  (interactive)
-  (evil-end-of-line))
-
-(defun my/kill-ring-save-symbol-at-point ()
-  "Kill word under cursor"
-  (interactive)
-  (let (symbol)
-    (if (symbol-at-point)
-        (progn
-          (setq symbol (thing-at-point 'symbol))
-          (kill-new symbol)
-          (message "%s" symbol))
-      (message "no symbol is under the cursor"))))
-
-(defun my/quit-this-buffer (&optional arg)
-  (interactive "P")
-  (let ((cur-buf (current-buffer)))
-    (cond
-     ((or (equal (buffer-name) "*scratch*")
-          (equal (buffer-name) "*Messages*"))
-      (quit-window))
-     ;; dired or other non-file buffers
-     ((and (not buffer-file-name) (not (buffer-base-buffer)))
-      (if (one-window-p)
-          (kill-this-buffer)
-        (kill-buffer-and-window)))
-     ((buffer-modified-p) ;; buffer is not saved
-      (message "buffer modified"))
-     ((cl-loop for buf in (buffer-list)
-               if (eq cur-buf (buffer-base-buffer buf))
-               return t)  ;; buffer has clones
-      (if (yes-or-no-p "derived buffer(s) exist, kill it anyway?")
-          (kill-this-buffer)))
-     (t  ;; regular or narrowed buffers
-        (kill-this-buffer)))))
-
-(defun my/save-buffer (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (save-some-buffers)
-      (call-interactively 'save-buffer)))
-
 (defun my/swiper (&optional arg)
   (interactive "P")
   (let ((str (if (equal arg '(4))
                  (and (symbol-at-point) (thing-at-point 'symbol)))))
     (swiper str)))
+
+(defun my/counsel-rg-at-point (&optional arg)
+  (interactive "P")
+    (setq current-prefix-arg nil)
+    (counsel-rg (and (equal arg '(4)) (symbol-at-point) (thing-at-point 'symbol))))
 
 (defun my/toggle-buffer ()
   "Toggle buffers, ignoring certain ones."
@@ -322,6 +340,27 @@ has been displayed in this session."
         (switch-to-buffer buf)
         (throw 'done t)))
     (message "no more candidate buffer")))
+
+;;; window
+
+(defun my/select-window (&optional arg)
+  (interactive "P")
+  (if (integerp arg)
+      (funcall (intern-soft (format "winum-select-window-%d" arg)))
+    (other-window 1 t)
+    (select-frame-set-input-focus (selected-frame))
+    )
+  )
+
+(defun my/select-window (&optional arg)
+  (interactive "P")
+  (if (integerp arg)
+      (funcall (intern-soft (format "winum-select-window-%d" arg)))
+    (other-window 1 t)
+    (select-frame-set-input-focus (selected-frame))
+    )
+  )
+
 
 (defun my/delete-window (&optional arg)
   (interactive "P")
@@ -381,6 +420,7 @@ has been displayed in this session."
       (shrink-window 2)
     (enlarge-window 2)))
 
+;;; file
 (defvar my/counsel-recentf-file-extension nil)
 
 (defun my/counsel-recentf-set-file-extension ()
@@ -482,11 +522,6 @@ has been displayed in this session."
 (setq my/counsel-rg-base-command-prefix
       "rg -i -M 512 --no-heading --line-number --color never --follow ")
 
-(defun my/counsel-rg-at-point (&optional arg)
-  (interactive "P")
-    (setq current-prefix-arg nil)
-    (counsel-rg (and (equal arg '(4)) (symbol-at-point) (thing-at-point 'symbol))))
-
 (defun my/ffap ()
   (interactive)
   (let* ((file (ffap-string-at-point))
@@ -511,30 +546,21 @@ has been displayed in this session."
   (if (equal arg '(4))
       (let ((projectile-switch-project-action 'projectile-find-dir))
         (projectile-switch-project))
-    (unless my-default-projectile-project
-      (my/projectile-select-project))
-    (let ((default-directory my-default-projectile-project))
-      (projectile-find-dir))))
+      (projectile-find-dir)))
 
 (defun my/projectile-find-file (&optional arg)
   (interactive "P")
   (if (equal arg '(4))
       (let ((projectile-switch-project-action 'projectile-find-file))
         (projectile-switch-project))
-    (unless my-default-projectile-project
-      (my/projectile-select-project))
-    (let ((default-directory my-default-projectile-project))
-      (projectile-find-file))))
+      (projectile-find-file)))
 
 (defun my/projectile-recentf (&optional arg)
   (interactive "P")
   (if (equal arg '(4))
       (let ((projectile-switch-project-action 'projectile-recentf))
         (projectile-switch-project))
-    (unless my-default-projectile-project
-      (my/projectile-select-project))
-    (let ((default-directory my-default-projectile-project))
-      (projectile-recentf))))
+      (projectile-recentf)))
 
 (defun my/goto-indirect-narrow-at-point ()
   (interactive)
