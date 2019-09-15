@@ -1,13 +1,3 @@
-
-(defvar my/counsel-recentf-file-extension nil)
-
-(defun my/counsel-recentf-set-file-extension ()
-  (interactive)
-  (let ((extension (concat "\\." (read-string "file extension string:") "$")))
-    (customize-save-variable 'my/counsel-recentf-file-extension extension)
-  ))
-
-
 (setq my/counsel-rg-base-command-prefix
       "rg -i -M 512 --no-heading --line-number --color never --follow ")
 

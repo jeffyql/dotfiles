@@ -297,7 +297,7 @@ has been displayed in this session."
   (interactive "P")
   (if arg
       (evil-scroll-up 0)
-    (evil-scroll-page-0p 1)
+    (evil-scroll-page-up 1)
   ))
 
 (defun my/evil-insert ()
@@ -573,9 +573,6 @@ has been displayed in this session."
    (interactive)
    (let ((projectile-switch-project-action 'projectile-dired))
      (projectile-switch-project)))
-
-(setq my/counsel-rg-base-command-prefix
-      "rg -i -M 512 --no-heading --line-number --color never --follow ")
 
 (defun my/ffap ()
   (interactive)
