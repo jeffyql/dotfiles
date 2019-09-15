@@ -131,6 +131,9 @@ has been displayed in this session."
                                          try-complete-lisp-symbol-partially
                                          try-complete-lisp-symbol))
 
+;; enable reuse directory buffer
+(put 'dired-find-alternate-file 'disabled nil)
+
 ;;; config packages
 ;; Bootstrap `use-package'
 (unless (package-installed-p 'use-package)
@@ -140,14 +143,15 @@ has been displayed in this session."
 (use-package avy
   :ensure t
   :config
-  (setq avy-background nil)
-  (setq avy-keys (nconc (number-sequence ?a ?z)))
+  (setq avy-background nil
+        avy-all-windows (quote all-frames))
   )
-
-;(use-package bind-map :ensure t)
 
 (use-package counsel :ensure t)
 
+(use-package deadgrep
+  :ensure t
+  )
 (use-package evil
   :ensure t
   :init
@@ -165,6 +169,7 @@ has been displayed in this session."
     (evil-mode 1)
     (use-package evil-ediff :ensure t)
     (use-package evil-matchit :ensure t)
+    (use-package evil-commentary :ensure t)
     )
 )
 
@@ -210,6 +215,8 @@ has been displayed in this session."
     )
   )
 
+(use-package magit :ensure t)
+
 (use-package org
   :ensure t
   )
@@ -221,9 +228,11 @@ has been displayed in this session."
   )
 
 (use-package projectile
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
+  :ensure t
+  :config
+  (projectile-mode +1)
   :custom
+  (projectile-current-project-on-switch 'keep)
   (projectile-completion-system 'ivy)
   (projectile-generic-command "fd . -0")
   (projectile-git-command "fd . -0")
@@ -243,6 +252,12 @@ has been displayed in this session."
     (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
     ))
 
+(use-package shackle
+  :ensure t
+  :config
+  (setq shackle-default-rule '(:same t))
+  (shackle-mode 1))
+
 (use-package undo-tree :ensure t)
 
 (use-package which-key
@@ -258,7 +273,7 @@ has been displayed in this session."
   :config
   (winum-mode))
 
-;;; copy/paste
+;;; editing
 
 (defun my/kill-ring-save-symbol-at-point ()
   "Kill word under cursor"
@@ -271,37 +286,25 @@ has been displayed in this session."
           (message "%s" symbol))
       (message "no symbol is under the cursor"))))
 
-;;; buffer/editing
+(defun my/scroll-down (&optional arg)
+  (interactive "P")
+  (if arg
+      (evil-scroll-down 0)
+    (evil-scroll-page-down 1)
+  ))
+
+(defun my/scroll-up (&optional arg)
+  (interactive "P")
+  (if arg
+      (evil-scroll-up 0)
+    (evil-scroll-page-0p 1)
+  ))
 
 (defun my/evil-insert ()
   (interactive)
   (if (memq major-mode evil-emacs-state-modes)
       (evil-emacs-state 1)
     (call-interactively 'evil-insert)))
-
-(defun my/quit-this-buffer (&optional arg)
-  (interactive "P")
-  (let ((cur-buf (current-buffer)))
-    (cond
-     ((eq major-mode 'dired-mode)
-      (kill-buffer))
-     ((or (not buffer-file-name)
-          (cl-loop for buf in (buffer-list)
-                   if (eq cur-buf (buffer-base-buffer buf))
-               return t))
-      (quit-window))
-     ((buffer-modified-p) ;; buffer is not saved
-      (message "buffer modified"))
-     (t  ;; unmodified file buffers
-        (kill-buffer)))))
-
-(defun my/save-buffer (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (save-some-buffers)
-      (call-interactively 'save-buffer)))
-
-;;; search/navigation
 
 (defun my/dired-up-directory ()
   (interactive)
@@ -321,6 +324,10 @@ has been displayed in this session."
                  (and (symbol-at-point) (thing-at-point 'symbol)))))
     (swiper str)))
 
+(defun my/swiper-current-kill ()
+  (interactive)
+  (swiper (current-kill 0)))
+
 (defun my/counsel-rg-at-point (&optional arg)
   (interactive "P")
     (setq current-prefix-arg nil)
@@ -330,29 +337,51 @@ has been displayed in this session."
   "Toggle buffers, ignoring certain ones."
   (interactive)
   (catch 'done
-    (dolist (buf (buffer-list))
-      (unless (or (equal (current-buffer) buf)
-                  (and (not (one-window-p))
-                       (eq (window-buffer (next-window)) buf))
-                  (with-current-buffer buf
-                    (string-match "^ +\\*" (buffer-name))
-                    ))
-        (switch-to-buffer buf)
-        (throw 'done t)))
+    (cl-loop for buf in (buffer-list) do
+             (unless (or (equal (current-buffer) buf)
+                         (eq (window-buffer (next-window (selected-window) nil 'visible)) buf)
+                         (string-match "^ +\\*" (buffer-name buf)))
+                 (switch-to-buffer buf)
+                 (throw 'done t)))
     (message "no more candidate buffer")))
 
-;;; window
+;;; buffer
 
+(defun my/kill-this-buffer ()
+   (interactive)
+   (if (or (equal "*scratch*" (buffer-name))
+           (equal "*Messages*" (buffer-name)))
+       (error "buffer is reserved"))
+   (if (buffer-modified-p)
+       (error "buffer is modified"))
+     (kill-this-buffer))
+
+(defun my/save-buffer (&optional arg)
+  (interactive "P")
+  (if (equal arg '(4))
+      (save-some-buffers)
+      (call-interactively 'save-buffer)))
+
+;;; search/navigation
+;;; frame and window
+(defun my/next-frame ()
+  (interactive)
+  (let ((next-frame
+         (if (<= (length (frame-list)) 2)
+             (make-frame)
+           (next-frame))))
+    (select-frame-set-input-focus next-frame)
+    (run-hooks 'window-configuration-change-hook)))
+ 
 (defun my/select-window (&optional arg)
   (interactive "P")
   (if (integerp arg)
       (winum-select-window-by-number arg)
-    (other-window 1 t)
-    (select-frame-set-input-focus (selected-frame))
-    )
-  )
-
-
+    (if arg
+        (my/next-frame)
+      (other-window 1 'visible)
+      (select-frame-set-input-focus (selected-frame)))))
+ 
 (defun my/delete-window (&optional arg)
   (interactive "P")
   (if (equal arg '(4))
@@ -411,6 +440,20 @@ has been displayed in this session."
       (shrink-window 2)
     (enlarge-window 2)))
 
+(defun my/swap-window ()
+  (interactive)
+  (if (eq (selected-frame) (next-frame))
+      (error "there is only one frame"))
+  (let* ((window1 (selected-window))
+         (window2 (next-window nil nil 'visible))
+         (buffer1 (current-buffer))
+         (buffer2 (window-buffer window2)))
+    (if (eq buffer1 buffer2)
+        (error "the buffers are the same"))
+    (set-window-buffer window1 buffer2)
+    (set-window-buffer window2 buffer1)
+    (select-window window2)))
+
 ;;; file
 (defvar my/counsel-recentf-file-extension nil)
 
@@ -419,108 +462,144 @@ has been displayed in this session."
   (let ((extension (concat "\\." (read-string "file extension string:") "$")))
     (customize-save-variable 'my/counsel-recentf-file-extension extension)
   ))
+(defvar my-main-language-filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$")
 
-(defun my/counsel-recentf-misc ()
-  (interactive)
-  (let ((filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$\\|\\.el$\\|\\.el.gz$\\|\\.json$\\|\\.log$\\|\\.org$\\|\\.py$\\|\\.sh$\\|\\.txt$\\|\\.xml$\\|Dockerfile\\|\\.[cs]ql$")
-        (file-list (mapcar #'substring-no-properties recentf-list)))
-    (ivy-read "Select file: " (cl-remove-if  (lambda (x) (string-match filter x)) file-list)
+(defun my/recentf-by-type (filter &optional include)
+  (let* ((list (if include
+                    (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)
+                  (cl-remove-if  (lambda (x) (string-match filter x)) list)))
+         (list (if (equal (buffer-file-name) (car list))
+                   (cdr list) list)))
+    (ivy-read "Select file: " list
               :action (lambda (f)
                         (with-ivy-window
                           (find-file f)))
               :caller 'counsel-recentf)))
 
-(defun my/counsel-recentf-filtered (filter &optional project-root)
-  (let (file-list)
-    (setq file-list
-          (if project-root
-              (cl-remove-if-not (lambda (f)
-                                  (and (string-prefix-p project-root f)
-                                       (string-match filter f)))
-                                recentf-list)
-            (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list))
-          file-list (if buffer-file-name
-                        (delete buffer-file-name file-list)
-                      file-list))
-    (if project-root
-        (setq file-list (mapcar (lambda (f) (file-relative-name f project-root)) file-list)))
-    (ivy-read (concat "[" project-root "] Select file: ") file-list
+(defun my/recentf-by-type-and-project (filter &optional include arg)
+  (interactive "P")
+  (let* ((project-root
+          (or (and (not arg)
+                   (projectile-project-root default-directory))
+              (projectile-completing-read
+               "Switch to project: " projectile-known-projects)))
+         (default-directory project-root)
+         (list (projectile-recentf-files))
+         (list (if include
+                   (cl-remove-if-not  (lambda (x) (string-match filter x)) list)
+                 (cl-remove-if  (lambda (x) (string-match filter x)) list)))
+         (list (if (and buffer-file-name
+                        (equal (car list)
+                               (file-relative-name buffer-file-name project-root)))
+                   (cdr list) list))
+         (next-buf (window-buffer (next-window (selected-window) nil 'visible)))
+         (next-buf-file (buffer-file-name next-buf))
+         (list (if next-buf-file
+                   (delete (file-relative-name next-buf-file project-root) list)
+                 list))
+         (project-root-name (file-name-nondirectory (directory-file-name project-root)))
+         (prompt (concat "[" project-root-name "]: ")))
+    (ivy-read  prompt list
               :action (lambda (f)
                         (with-ivy-window
-                          (find-file (if project-root (expand-file-name f project-root)
-                                       f))))
+                          (find-file f)))
               :caller 'counsel-recentf)))
 
-(defun my/counsel-recentf-designated ()
+(defun my/recentf-main-language (&optional arg)
+   (interactive "P")
+   (my/recentf-by-type-and-project my-main-language-filter t arg))
+ 
+ (defun my/recentf-el ()
+   (interactive)
+   (my/recentf-by-type "\\.el$\\|\\.el.gz$" t))
+ 
+ (defun my/recentf-org ()
+   (interactive)
+   (my/recentf-by-type "\\.org$" t))
+ 
+ (defun my/recentf-misc (&optional arg)
+   (interactive "P")
+   (my/recentf-by-type (concat my-main-language-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz") nil arg))
+ 
+(defun my/last-file-by-type (filter)
+  (let* ((next-window-file
+          (and (not (eq (selected-frame) (next-frame)))
+               (buffer-file-name
+                (window-buffer (next-window (selected-window) nil 'visible)))))
+         file)
+    (setq file
+          (catch 'done
+            (cl-loop for file in recentf-list do
+                     (unless (or (not (string-match filter file))
+                                 (equal file buffer-file-name)
+                                 (equal file next-window-file))
+                       (throw 'done file)))))
+    (if (file-exists-p file)
+        (find-file file))))
+
+(defun my/last-main-language-file ()
   (interactive)
-  (if (stringp my/counsel-recentf-file-extension)
-      (my/counsel-recentf-filtered my/counsel-recentf-file-extension)))
+  (my/last-file-by-type my-main-language-filter))
 
-(setq my-c++-project-root nil)
+(defun my/last-org-file ()
+  (interactive)
+  (my/last-file-by-type "\\.org$"))
 
-(defun my/counsel-recentf-c (&optional projectile)
-  (interactive "P")
-  (if projectile
-      (setq my-c++-project-root (projectile-expand-root
-                             (projectile-completing-read "Switch to open project: "
-                                                         projectile-known-projects))))
-  (my/counsel-recentf-filtered "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$" my-c++-project-root))
-
-(defun my/counsel-recentf-dockerfile (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "dockerfile" projectile))
-
-(defun my/counsel-recentf-cmake (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "CMakeLists\\.txt$" projectile))
-
-(defun my/counsel-recentf-el (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.el$\\|\\.el.gz$" projectile))
-
-(defun my/counsel-recentf-json (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.json$" projectile))
-
-(defun my/counsel-recentf-log (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.log$" projectile))
-
-(defun my/counsel-recentf-org (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.org$" projectile))
-
-(defun my/counsel-recentf-py (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.py$" projectile))
-
-(defun my/counsel-recentf-sql-cql (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.[cs]ql$" projectile))
-
-(defun my/counsel-recentf-sh (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.sh$" projectile))
-
-(defun my/counsel-recentf-txt (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.txt$" projectile))
-
-(defun my/counsel-recentf-xml (&optional projectile)
-  (interactive "P")
-  (my/counsel-recentf-filtered "\\.xml$" projectile))
+ (defun my/projectile-select-project ()
+   (interactive)
+   (let* ((dir (read-directory-name "Select default project: " "~/" nil t))
+          (project-root (projectile-project-root dir)))
+     (unless project-root
+       (error "not a project"))
+     (setq my-default-projectile-project project-root)
+     (let ((default-directory my-default-projectile-project))
+       (projectile-dired))))
+ 
+ (defun my/projectile-find-dir (&optional arg)
+   (interactive "P")
+   (let ((default-directory (if arg (projectile-completing-read
+                                     "Switch to project: " projectile-known-projects)
+                               default-directory)))
+     (projectile-find-dir)))
+ 
+ (defun my/projectile-find-file (&optional arg)
+   (interactive "P")
+   (let ((default-directory (if arg (projectile-completing-read
+                                     "Switch to project: " projectile-known-projects)
+                               default-directory)))
+     (projectile-find-file)))
+ 
+ (defun my/projectile-dired ()
+   (interactive)
+   (let ((projectile-switch-project-action 'projectile-dired))
+     (projectile-switch-project)))
 
 (setq my/counsel-rg-base-command-prefix
       "rg -i -M 512 --no-heading --line-number --color never --follow ")
 
 (defun my/ffap ()
   (interactive)
-  (let* ((file (ffap-string-at-point))
-         (dir (ivy-dired-history--read-file-name "directory: "))
-         (file-name (concat dir file)))
-    (when (file-exists-p file-name)
+  (let (msg loc filename dir line))
+    (if (or (symbol-value 'compilation-minor-mode)
+            (eq major-mode 'compilation-mode))
+        (setq msg (get-text-property (point) 'compilation-message)
+              loc (and msg (compilation--message->loc msg))
+              filename (caar (compilation--loc->file-struct loc))
+              filename (file-name-nondirectory filename)
+              line (cadr loc))
+      (setq filename (ffap-string-at-point))
+      (save-excursion
+        (beginning-of-line 2)
+        (if (looking-at "\\([0-9]+\\):")
+          (setq line (string-to-number (match-string 1))))))
+    (setq dir (ivy-dired-history--read-file-name "directory: ")
+          filename (concat dir filename))
+    (if (not (file-exists-p filename))
+        (message "%s doesn't exist" filename)
       (ivy-dired-history--update dir)
-      (find-file file-name))))
+      (find-file filename)
+      (if line
+          (goto-line line))))
 
 (setq my-default-projectile-project nil)
 
@@ -553,18 +632,37 @@ has been displayed in this session."
         (projectile-switch-project))
       (projectile-recentf)))
 
-(defun my/goto-indirect-narrow-at-point ()
-  (interactive)
-  (let ((buffer-names (mapcar (lambda (b) (buffer-name b)) (buffer-list)))
-        (func-name (thing-at-point 'symbol))
-        buf-name)
-    (unless func-name
-      (error "no symbol found at point"))
-    (setq buf-name (seq-find (lambda (s) (and (equal ">><<" (substring s 0 4))
-                                              (string-match-p (regexp-quote func-name) s)))
-                             buffer-names))
-    (unless (stringp buf-name)
-      (error "buffer with name containing the substring at point is not found"))
-    (switch-to-buffer buf-name)))
+(defun my/counsel-narrowed-indirect (&optional arg)
+   (interactive "P")
+   (let* ((buffer-names (mapcar #'buffer-name (buffer-list)))
+          (narrowed-indirect-list
+           (cl-remove-if-not
+            (lambda (b) (and (> (length b) 4) (equal ">>"(substring b 0 2))))
+            buffer-names)))
+     (if arg
+       (unless (symbol-at-point)
+         (error "symbol not found at point")))
+
+     (ivy-read "Select indirect buffer: " narrowed-indirect-list
+               :action (lambda (b)
+                         (with-ivy-window
+                           (switch-to-buffer b)))
+               :initial-input (if arg (thing-at-point 'symbol)))))
+
+ (defun my/goto-indirect-narrow-at-point ()
+   (interactive)
+   (let ((buffer-names (mapcar (lambda (b) (buffer-name b)) (buffer-list)))
+         (func-name (thing-at-point 'symbol))
+         buf-name)
+     (unless func-name
+       (error "no symbol found at point"))
+     (setq func-name (concat func-name "<<"))
+     (setq buf-name (seq-find (lambda (s) (and (> (length s) 4)
+                                               (equal ">>" (substring s 0 2))
+                                               (string-match-p (regexp-quote func-name) s)))
+                              buffer-names))
+     (unless (stringp buf-name)
+       (error "buffer not found"))
+     (switch-to-buffer buf-name)))
 
 (provide 'init-core)

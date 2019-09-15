@@ -1,5 +1,5 @@
 (when (eq system-type 'darwin)
-  (set-default-font "-*-Hack-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1"))
+  (set-default-font "-*-Hack-normal-normal-normal-*-15-*-*-*-m-0-iso10646-1"))
 
 (menu-bar-mode -1)
 

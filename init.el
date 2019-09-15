@@ -4,6 +4,9 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 (package-initialize)
 
+(if (string= system-type "darwin")
+    (setq server-socket-dir (format "/tmp/emacs%d" (user-uid))))
+
 (require 'init-core)
 (require 'init-keybindings)
 (require 'init-lib)
@@ -31,6 +34,8 @@
 ;; (require 'config-macros)
 ;; (require 'config-python)
 (add-to-list 'load-path my-tmux-integration-dir)
-(require 'tmux-head)
+;; (require 'tmux-head)
+
+(server-start)
 (provide 'init)
 

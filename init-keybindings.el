@@ -1,26 +1,22 @@
 (general-define-key
  :states '(normal)
  :keymaps 'override
- "i"   'my/evil-insert
- "z"   'my/toggle-buffer
- ";"   'avy-goto-word-or-subword-1
+ "s"   'my/toggle-buffer
+ "t"   'universal-argument
+ ";"   'avy-goto-word-1
  "/"   'evil-ex-search-forward
  ","   'my/select-window
  ":"   'evil-ex
- "SPC" 'evil-scroll-page-down
- "DEL" 'evil-scroll-page-up
+ "SPC" 'my/scroll-down
+ "DEL" 'my/scroll-up
  )
 
 (general-define-key
  :states '(motion normal visual)
- "t"   'universal-argument
- "q"   'my/quit-this-buffer
+ "i"   'my/evil-insert
+ "q"   'my/kill-this-buffer
  "RET" nil ;; leader key
  "TAB" nil
- "("   'kmacro-start-macro-or-insert-counter
- ")"   'kmacro-end-or-call-macro
- ">"   'evil-shift-right-line
- "<"   'evil-shift-left-line
  )
 
 ;; v now is like a leader key
@@ -45,17 +41,6 @@
  "<s-down>" nil
  )
 
-(general-create-definer my-return-def
-  :prefix "RET")
-
-(my-return-def '(normal)
-  "<escape>"  'keyboard-quit
-  "RET"   'open-next-line
-  "DEL"   'open-previous-line
-  "SPC"   'just-one-space
-  "c"     'insert-prompt-symbol
-)
-
 (general-create-definer my-f-def
   :prefix "f")
 (my-f-def
@@ -64,34 +49,25 @@
   "ESC"  'keyboard-quit
   "a"    'my/ffap
   "c"    'counsel-command-history
-  "e"    'rg
-  "f"    'counsel-find-file
   "d"    'dired
+  "e"    'my/recentf-el
+  "f"    'counsel-find-file
   "g"    'grep
   "h"    'hydra-help/body
   "i"    'counsel-imenu
-  "r"    nil
-  "rd"   'my/projectile-find-dir
-  "re"   'my/counsel-recentf-el 
-  "rl"   'my/counsel-recentf-log 
-  "ro"   'my/counsel-recentf-org 
-  "rp"   'my/projectile-select-project
-  "rs"   'my/counsel-recentf-sh 
-  "rx"   'my/counsel-recentf-xml 
-  "rq"   'my/counsel-recentf-sql-cql 
-  "rr"   'counsel-recentf 
-  "k"   'my/projectile-recentf
+  "j"    'my/recentf-main-language
+  "k"    'my/recentf-misc
   "l"    'my/counsel-rg-at-point
   "m"    'my/swiper
   "o"    'my/counsel-rg-org-search
   "p"    'projectile-find-file
-  "s"    'hydra-shell-cmd/body
+  "r"    'my/recentf-org
   "s"    'ivy-switch-buffer
   "t"    'my/ripgrep-this-file
   "u"    'counsel-bookmark
-  "w"    'tmux-select-active-window
   "y"    'counsel-yank-pop
-  ",c"    'my/swiper-all-c++
+  ","    'my/swiper-current-kill
+  ";"    'my/counsel-rg-current-kill
   "."    'ivy-resume
   )
 
@@ -112,8 +88,9 @@
   "j"    'hydra-scroll-line-up/body
   "k"    'hydra-scroll-line-down/body
   "l"    'evil-goto-line
+  "m"    'my/last-main-language-file
   "n"    'evil-next-match
-  "o"    'hydra-org-goto/body
+  "o"    'my/recentf-org
   "s"    '(lambda () (interactive) (switch-to-buffer "*scratch*"))
   "t"    'evil-scroll-line-to-top
   ";"    'goto-last-change
@@ -131,7 +108,7 @@
   :keymaps 'override
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
-  "c"    'comment-line
+  "c"    nil  ;; c key is reserved as major mode key (C-c C-c)
   "d"    'my/delete-window
   "e"    'hydra-edit/body
   "f"    nil    ;;f key is reserved as major mode leader 
@@ -142,10 +119,11 @@
   "o"    'occur
   "q"    'delete-window
   "r"    'open-next-line
+  "s"    'xref-find-definitions
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "v"    'hydra-misc/body
-  "w"    'my/split-window
+  "w"    'my/swap-window
   "x"    'counsel-M-x
   "z"    'delete-frame
   "B"    'balance-windows
@@ -178,54 +156,6 @@
   :states 'normal
   :keymaps 'override
   "ESC"  'keyboard-quit
-  )
-
-(general-create-definer my-s-def
-  :prefix "s")
-(my-s-def
-  :states '(normal motion visual)
-  :keymaps 'override
-  ","    'tmux-ls
-  "."    'hydra-tmux-combo/body
-  "'"    'tmux-display-pane-numbers
-  ";"    'hydra-tmux-command-history/body
-  "-"    'tmux-last-dir
-  "_"    'tmux-split-window-vertical
-  "b"    'tmux-capture-pane
-  "c"    'tmux-ctrl-c
-  "d"    'tmux-ctrl-d
-  "e"    'tmux-clear-pane
-  "f"    'tmux-minibuffer-run-shell-cmd
-  "g"    'tmux-cd-default-directory
-  "h"    'tmux-home-dir
-  "i"    'tmux-insert-state
-  "j"    'tmux-ivy-run-shell
-  "m"    'hydra-tmux-copy-mode/body
-  "n"    'tmux-n
-  "o"    'tmux-swap-pane
-  "p"    'tmux-pwd
-  "q"    'tmux-q
-  "r"    'tmux-rename-window
-  "s"    'tmux-send-region
-  "t"    'hydra-tmux-window-config/body
-  "w"    'tmux-last-window
-  "y"    'tmux-y
-  "z"    'tmux-ctrl-z
-  "D"    'tmux-kill-pane
-  "K"    'tmux-kill-window
-  "N"    'tmux-new-window
-  "SPC"  'tmux-space
-  "RET"  'tmux-ctrl-m
-  "0"    'tmux-select-window-0
-  "1"    'tmux-select-window-1
-  "2"    'tmux-select-window-2
-  "3"    'tmux-select-window-3
-  "4"    'tmux-select-window-4
-  "5"    'tmux-select-window-5
-  "6"    'tmux-select-window-6
-  "7"    'tmux-select-window-7
-  "8"    'tmux-select-window-8
-  "9"    'tmux-select-window-9
   )
 
 ;;;; enable escape key
@@ -329,7 +259,7 @@
             (local-unset-key ".")
             (local-unset-key (kbd "DEL"))
             ;; (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
-            (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-file)
+            (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-alternate-file)
             (local-set-key   "x" 'dired-mark)
             ))
 
@@ -439,7 +369,7 @@
 
 (defhydra hydra-edit (:color blue)
   ("a" align "align")
-  ("e" delete-trailing-whitespace "delete trailing WS")
+  ("e" evil-commentary-line "comment line")
   ("m" comment-dwim "comment dwim")
   ("SPC" just-one-space "one space")
   )
