@@ -33,6 +33,23 @@
   ("," edit-kbd-macro)
   ("q" nil :color blue))
 
+(defun highlight-symbol-at-point-all-windows ()
+  "Toggle highlighting of the symbol at point in all windows."
+  (interactive)
+  (let ((symbol (highlight-symbol-get-symbol)))
+    (unless symbol (error "No symbol at point"))
+    (if (highlight-symbol-symbol-highlighted-p symbol)
+        (save-selected-window
+          (cl-dolist (x (window-list))
+            (select-window x)
+            (highlight-symbol-remove-symbol symbol)))
+      (let ((color (highlight-symbol-next-color)))
+        (save-selected-window
+          (cl-dolist (x (window-list))
+            (select-window x)
+          (highlight-symbol-add-symbol symbol color))))
+      )))
+
 (defun toggle-window-split ()
   (interactive)
   (if (= (count-windows) 2)
@@ -110,6 +127,12 @@
       (open-line arg)
       (when newline-and-indent
         (indent-according-to-mode)))
+
+(defun my/open-next-line (&optional arg)
+  (interactive "P")
+  (if arg
+      (open-previous-line 1)
+    (open-next-line 1)))
 
 (defun move-line-up ()
   "Move up the current line."

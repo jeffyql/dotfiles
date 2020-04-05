@@ -1,9 +1,51 @@
-;;; mode local keybindings
+;; Keybindings
+
+(general-def 'normal org-mode-map
+ "RET" 'my/org-open-link
+ )
+
+(general-define-key
+ :definer 'minor-mode
+ :states 'normal
+ :keymaps 'org-capture-mode
+ "RET" 'org-capture-finalize)
+
+(general-define-key
+ :definer 'minor-mode
+ :states 'normal
+ :keymaps 'org-src-mode
+ "RET" 'org-edit-src-exit)
+66
+
+;; mode local keybindings
 (my-m-def
   :states 'normal
   :keymaps 'org-mode-map
   "c"   'org-ctrl-c-ctrl-c
   )
+(use-package org-roam
+  :hook 
+  (after-init . org-roam-mode)
+  :custom
+  (org-roam-completion-system 'ivy)
+  (org-roam-directory "/Users/jeff/mib/roam/")
+  (org-roam-link-title-format "R:%s")
+  )
+
+8 (require 'org-journal)
+ 19 (setq org-journal-date-prefix "#+TITLE: ")
+ 20 (setq org-journal-file-format "%Y-%m-%d.org")
+ 21 (setq org-journal-date-format "%A, %d %B %Y")
+ 22 (setq org-journal-dir (concat my-mib-dir "roam"))
+ 23
+ 24 (require 'deft)
+ 25 (setq deft-extensions '("org"))
+ 26 (setq deft-directory (concat my-mib-dir "roam"))
+ 27
+ 28 (require 'emacsql)
+ 29 (require 'emacsql-sqlite)
+ 30 (require 'org-roam)
+ 31 (setq org-roam-directory (concat my-mib-dir "roam"))
 
 (my-mf-def
   :states 'normal
@@ -180,40 +222,72 @@
   (when (org-in-regexp org-any-link-re) 
     (org-open-at-point)
     ))
+(defun my/org-open-link ()
+   (interactive)
+   (save-excursion
+     (if (org-in-regexp org-any-link-re)
+         (org-open-at-point)
+       (org-next-link))
+       ))
 
-(defun my/get-org-link-to-current-line ()
-  (let* ((file (buffer-file-name (or (buffer-base-buffer) (current-buffer))))
-         (text (buffer-substring (point-at-bol) (point-at-eol)))
-         (link-text (substring text 0 27)) 
-         cpltxt)
-    (save-excursion
-      (widen)
-      (setq line-num (number-to-string (line-number-at-pos))))
-    (setq cpltxt (concat "file:" file "::" link-text)
-          cpltxt (org-make-link-string cpltxt  "->"))
-    (concat "  - " (file-name-nondirectory file)
-            "\n    line[" line-num "] " cpltxt "  " text)))
-  
-(defun my/get-org-link-to-source-code-text ()
-  (let* ((buf (or (buffer-base-buffer) (current-buffer)))
-         (beg (if mark-active (region-beginning) (point-at-bol)))
-         (end (if mark-active (region-end) (point-at-eol)))
-         (text (buffer-substring beg end))
-         (file (buffer-file-name buf))
-         line-end line-num line-text name cplink header-text)
-    (save-excursion
-      (save-restriction
-        (widen)
-        (goto-char beg)
-        (setq line-end (point-at-eol)
-              line-text (buffer-substring beg line-end)
-              line-num (number-to-string (line-number-at-pos))
-              func-name (which-function))))
-    (setq cpltxt (concat "file:" file "::" text)
-          cpltxt (org-make-link-string cpltxt "->"))
-    (setq header-text (concat (which-function) " (" (my/two-level-file-path file) ")"))
-    (concat "  - " header-text
-            "\n    line[" line-num "] " cpltxt "  " line-text)))
+ (defun my/org-store-link-to-current-line ()
+   (interactive)
+   (let* ((file (buffer-file-name (or (buffer-base-buffer) (current-buffer))))
+          (line-num (number-to-string (line-number-at-pos nil t)))
+          (beg (if (use-region-p) (region-beginning) (point-at-bol)))
+          (end (if (use-region-p) (region-end) (point-at-eol)))
+          (text (buffer-substring beg end))
+          (link-text (concat "file:" file "::" line-num))
+          (desc (concat (file-name-nondirectory file) ":" line-num ":"))
+          (link (org-make-link-string link-text desc)))
+     (kill-new (concat "- " link " " text))
+     (evil-first-non-blank)))
+
+ (defun my/org-store-cc-defun-link ()
+   (interactive)
+   (let* ((buf (or (buffer-base-buffer) (current-buffer)))
+          (file-name (buffer-file-name buf))
+          (line-num (number-to-string (line-number-at-pos nil t)))
+          (name-and-limits (c-defun-name-and-limits nil))
+          (func-name (if name-and-limits (car name-and-limits)))
+          (proj-root (projectile-project-root))
+          file-relative-name text link-text desc link)
+     (unless func-name
+       (error "unable to capture function name"))
+     (unless proj-root
+       (error "project root not found"))
+     (save-excursion
+       (goto-char (cadr name-and-limits))
+       (setq link-text (buffer-substring (point-at-bol) (point-at-eol))))
+     (setq link-text (concat "file:" file-name "::" link-text)
+           desc (concat "<FUNC>: " func-name)
+           link (org-make-link-string link-text desc))
+     (setq file-relative-name (file-relative-name file-name proj-root)
+           text (concat "- " link " (File: " file-relative-name " Line: " line-num ")\n  "))
+     (kill-new text)
+     (evil-first-non-blank)))
+
+ (defun my/org-store-cc-line-link ()
+   (interactive)
+   (let* ((buf (or (buffer-base-buffer) (current-buffer)))
+          (file (buffer-file-name buf))
+          (line-num (number-to-string (line-number-at-pos nil t)))
+          (beg (if (use-region-p) (region-beginning) (point-at-bol)))
+          (end (if (use-region-p) (region-end) (point-at-eol)))
+          (text (buffer-substring beg end))
+          (link-text (concat "file:" file "::" line-num))
+          (name-and-limits (c-defun-name-and-limits nil))
+          (limits (cdr name-and-limits))
+          (point-bol (c-point 'bol))
+          desc)
+     (if limits
+         (setq line (format "%s" (1+ (count-lines (car limits) (max point-bol (car limits)))))
+               total (format "%s" (count-lines (car limits) (cdr limits)))
+               desc (concat " " line "/" total " (Line: " line-num ")")
+               link (org-make-link-string link-text desc))
+       (error "not inside a function"))
+     (kill-new (concat "- " link " " text))
+     (evil-first-non-blank)))
 
 (defun my/org-bookmark (&optional arg)
   (interactive "P")

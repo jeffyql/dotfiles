@@ -41,6 +41,7 @@
                 require-final-newline t
                 tab-always-indent 'complete
                 tab-width 4
+                ring-bell-function 'ignore
                 )
 
 (setq imenu-auto-rescan t
@@ -149,9 +150,8 @@ has been displayed in this session."
 
 (use-package counsel :ensure t)
 
-(use-package deadgrep
-  :ensure t
-  )
+(use-package deadgrep :ensure t)
+
 (use-package evil
   :ensure t
   :init
@@ -167,9 +167,9 @@ has been displayed in this session."
     (setq evil-motion-state-modes nil)
     (setq evil-shift-width 1)
     (evil-mode 1)
+    (use-package evil-commentary :ensure t)
     (use-package evil-ediff :ensure t)
     (use-package evil-matchit :ensure t)
-    (use-package evil-commentary :ensure t)
     )
 )
 
@@ -266,8 +266,6 @@ has been displayed in this session."
   (which-key-mode)
   )
 
-(use-package whitespace :ensure t)
-
 (use-package winum
   :ensure t
   :config
@@ -318,21 +316,6 @@ has been displayed in this session."
     (call-interactively 'evil-ex-search-word-forward))
   (beginning-of-thing 'symbol))
 
-(defun my/swiper (&optional arg)
-  (interactive "P")
-  (let ((str (if (equal arg '(4))
-                 (and (symbol-at-point) (thing-at-point 'symbol)))))
-    (swiper str)))
-
-(defun my/swiper-current-kill ()
-  (interactive)
-  (swiper (current-kill 0)))
-
-(defun my/counsel-rg-at-point (&optional arg)
-  (interactive "P")
-    (setq current-prefix-arg nil)
-    (counsel-rg (and (equal arg '(4)) (symbol-at-point) (thing-at-point 'symbol))))
-
 (defun my/toggle-buffer ()
   "Toggle buffers, ignoring certain ones."
   (interactive)
@@ -363,7 +346,59 @@ has been displayed in this session."
       (call-interactively 'save-buffer)))
 
 ;;; search/navigation
-;;; frame and window
+;;; frame tab and window
+
+(defun my/select-tab-or-toggle-buffer (&optional arg)
+   (interactive "P")
+   (if (integerp arg)
+       (tab-bar-select-tab arg)
+     (if arg
+         (tab-bar-switch-to-recent-tab)
+       (my/toggle-buffer))))
+ 
+ (defun my/select-window ()
+   (interactive)
+   (let ((next-window (next-window)))
+     (unless (eq next-window (selected-window))
+       (select-window next-window)))
+   (run-hooks 'window-configuration-change-hook))
+
+(defun my/delete-or-split-window ()
+  (interactive)
+  (if (< 1 (count-windows))
+      (delete-other-windows)
+    (split-window-right)
+    (my/toggle-buffer)))
+
+(defun my/toggle-or-split-window ()
+  (interactive)
+  (if (= 1 (count-windows))
+      (progn
+        (split-window-below)
+        (my/toggle-buffer))
+    (if (= (count-windows) 2)
+        (let* ((this-win-buffer (window-buffer))
+               (next-win-buffer (window-buffer (next-window)))
+               (this-win-edges (window-edges (selected-window)))
+               (next-win-edges (window-edges (next-window)))
+               (this-win-2nd (not (and (<= (car this-win-edges)
+                                           (car next-win-edges))
+                                       (<= (cadr this-win-edges)
+                                           (cadr next-win-edges)))))
+               (splitter
+                (if (= (car this-win-edges)
+                       (car (window-edges (next-window))))
+                    'split-window-horizontally
+                  'split-window-vertically)))
+          (delete-other-windows)
+          (let ((first-win (selected-window)))
+            (funcall splitter)
+            (if this-win-2nd (other-window 1))
+            (set-window-buffer (selected-window) this-win-buffer)
+            (set-window-buffer (next-window) next-win-buffer)
+            (select-window first-win)
+            (if this-win-2nd (other-window 1)))))))
+
 (defun my/next-frame ()
   (interactive)
   (let ((next-frame
@@ -372,15 +407,6 @@ has been displayed in this session."
            (next-frame))))
     (select-frame-set-input-focus next-frame)
     (run-hooks 'window-configuration-change-hook)))
- 
-(defun my/select-window (&optional arg)
-  (interactive "P")
-  (if (integerp arg)
-      (winum-select-window-by-number arg)
-    (if arg
-        (my/next-frame)
-      (other-window 1 'visible)
-      (select-frame-set-input-focus (selected-frame)))))
  
 (defun my/delete-window (&optional arg)
   (interactive "P")
@@ -454,14 +480,29 @@ has been displayed in this session."
     (set-window-buffer window2 buffer1)
     (select-window window2)))
 
-;;; file
-(defvar my/counsel-recentf-file-extension nil)
-
-(defun my/counsel-recentf-set-file-extension ()
+;;; ivy
+(defun my/swiper-symbol ()
   (interactive)
-  (let ((extension (concat "\\." (read-string "file extension string:") "$")))
-    (customize-save-variable 'my/counsel-recentf-file-extension extension)
-  ))
+  (let ((str (and (symbol-at-point) (thing-at-point 'symbol))))
+        (counsel-grep-or-swiper str)))
+
+(defun my/swiper-current-kill ()
+  (interactive)
+  (counsel-grep-or-swiper (current-kill 0)))
+
+(defun my/counsel-rg ()
+  (interactive)
+  (counsel-rg nil default-directory))
+
+(defun my/counsel-rg-at-point ()
+  (interactive)
+    (setq current-prefix-arg nil)
+    (counsel-rg (and (symbol-at-point) (thing-at-point 'symbol)) default-directory))
+
+(defun my/counsel-rg-current-kill ()
+  (interactive)
+  (counsel-rg (current-kill 0) default-directory))
+
 (defvar my-main-language-filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$")
 
 (defun my/recentf-by-type (filter &optional include)
@@ -476,39 +517,45 @@ has been displayed in this session."
                           (find-file f)))
               :caller 'counsel-recentf)))
 
-(defun my/recentf-by-type-and-project (filter &optional include arg)
-  (interactive "P")
-  (let* ((project-root
-          (or (and (not arg)
-                   (projectile-project-root default-directory))
-              (projectile-completing-read
-               "Switch to project: " projectile-known-projects)))
-         (default-directory project-root)
-         (list (projectile-recentf-files))
-         (list (if include
-                   (cl-remove-if-not  (lambda (x) (string-match filter x)) list)
-                 (cl-remove-if  (lambda (x) (string-match filter x)) list)))
-         (list (if (and buffer-file-name
-                        (equal (car list)
-                               (file-relative-name buffer-file-name project-root)))
-                   (cdr list) list))
-         (next-buf (window-buffer (next-window (selected-window) nil 'visible)))
-         (next-buf-file (buffer-file-name next-buf))
-         (list (if next-buf-file
-                   (delete (file-relative-name next-buf-file project-root) list)
-                 list))
-         (project-root-name (file-name-nondirectory (directory-file-name project-root)))
-         (prompt (concat "[" project-root-name "]: ")))
-    (ivy-read  prompt list
-              :action (lambda (f)
-                        (with-ivy-window
-                          (find-file f)))
-              :caller 'counsel-recentf)))
+(defun my/get-recentf-project (filter &optional arg)
+  (let (project-root root)
+    (unless arg
+      (setq project-root 
+            (catch 'done
+              (cl-loop for f in recentf-list do
+                       (when (string-match-p filter f)
+                         (setq root (projectile-project-root (file-name-directory f)))
+                         (if root (throw 'done root)))))))
+    (unless project-root
+      (setq project-root 
+            (projectile-project-root (projectile-completing-read
+                                      "Switch to project: " projectile-known-projects))))
+    project-root))
 
-(defun my/recentf-main-language (&optional arg)
-   (interactive "P")
-   (my/recentf-by-type-and-project my-main-language-filter t arg))
- 
+(defun my/get-not-displayed-from-file-list (list)
+  (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
+         (next-file (if next-buf (buffer-file-name next-buf))))
+    (if buffer-file-name (setq list (delete buffer-file-name list)))
+    (if next-file (setq list (delete next-file list)))
+    list))
+  
+(defun my/recentf-main-language-by-project (&optional arg)
+  (interactive "P")
+  (let* ((project-root (my/get-recentf-project my-main-language-filter arg))
+         (list (cl-remove-if-not (lambda (f) (and (string-match my-main-language-filter f)
+                                                  (string-prefix-p project-root f)))
+                                 recentf-list))
+         (list (my/get-not-displayed-from-file-list list)) 
+         project-root-name prompt)
+    (setq list (mapcar (lambda (f) (file-relative-name f project-root)) list)
+          project-root-name (file-name-nondirectory (directory-file-name project-root))
+          prompt (concat "[" project-root-name "]: "))
+    (ivy-read  prompt list
+               :action (lambda (f)
+                         (with-ivy-window
+                           (find-file (expand-file-name f project-root))))
+               :caller 'counsel-recentf)))
+
  (defun my/recentf-el ()
    (interactive)
    (my/recentf-by-type "\\.el$\\|\\.el.gz$" t))
@@ -536,6 +583,28 @@ has been displayed in this session."
                        (throw 'done file)))))
     (if (file-exists-p file)
         (find-file file))))
+
+(defun my/last-file-by-type-and-project (filter project)
+  (let (file buf)
+    (catch 'done
+      (cl-loop for file in recentf-list do
+               (setq buf (get-file-buffer file))
+               (if (and (string-match-p filter file)
+                        (or (not buf) (not (get-buffer-window buf)))
+                        (string-prefix-p project file))
+                   (throw 'done file))))))
+
+(defun my/open-last-file-by-type-and-project (filter project)
+  (let ((file (my/last-file-by-type-and-project filter project)))
+    (when (and file (file-exists-p file))
+      (find-file file))))
+
+(defun my/last-main-language-file (&optional arg)
+  (interactive "P")
+  (let ((project (my/get-recentf-project my-main-language-filter arg)))
+    (my/open-last-file-by-type-and-project
+     my-main-language-filter
+     project)))
 
 (defun my/last-main-language-file ()
   (interactive)
@@ -645,6 +714,63 @@ has been displayed in this session."
                          (with-ivy-window
                            (switch-to-buffer b)))
                :initial-input (if arg (thing-at-point 'symbol)))))
+
+(defun my/switch-indirect-narrow (&optional arg)
+  (interactive "P")
+  (if (buffer-base-buffer)
+      (let ((start (window-start))
+            (pos (point))
+            (buf (current-buffer)))
+        (pop-to-buffer-same-window (buffer-base-buffer))
+        (set-window-start (selected-window) start)
+        (goto-char pos) ;; anchor cursor
+        (unless (= (window-start) (point-min))
+          (scroll-down 1))
+        (goto-char pos))
+    (let* ((pos (point))
+           (win-start (window-start))
+           (win-end (window-end))
+           (region (if (use-region-p) t))
+           (file-name (buffer-name (buffer-base-buffer)))
+           (prefix
+            (when (and (not (equal arg '(4))) (not region))
+              (cond
+               ((eq major-mode 'c++-mode)
+                (car (c-defun-name-and-limits nil)))
+               ((derived-mode-p 'prog-mode)
+                (which-function))
+               ((eq major-mode 'org-mode)
+                (org-get-heading t t))
+               (t nil))))
+           buf-name beg end)
+      (unless prefix
+        (setq prefix (read-string (concat "buffer name prefix: "))))
+      (setq buf-name (concat ">>" prefix "<< [file:" file-name "]"))
+      (if (get-buffer buf-name)
+          (progn
+            (pop-to-buffer-same-window buf-name)
+            (if (and (>= win-start (point-min))
+                     (<= win-end (point-max)))
+                (set-window-start (selected-window) win-start))
+            (goto-char pos)
+            )
+        (when region
+          (setq  beg (region-beginning)
+                 end (region-end))
+          (deactivate-mark t)
+          )
+        ;; (remove-overlays beg end)
+        (clone-indirect-buffer buf-name nil)
+        (pop-to-buffer-same-window buf-name)
+        (cond
+         (region
+          (narrow-to-region beg end))
+         ((derived-mode-p 'prog-mode)
+          (narrow-to-defun))
+         ((eq major-mode 'org-mode)
+          (org-narrow-to-subtree)))
+        (goto-char pos)
+        (recenter nil)))))
 
  (defun my/goto-indirect-narrow-at-point ()
    (interactive)

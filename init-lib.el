@@ -1,10 +1,9 @@
 (setq my/counsel-rg-base-command-prefix
       "rg -i -M 512 --no-heading --line-number --color never --follow ")
 
-(defun my/counsel-rg-at-point (&optional arg)
-  (interactive "P")
-    (setq current-prefix-arg nil)
-    (counsel-rg (and (equal arg '(4)) (symbol-at-point) (thing-at-point 'symbol))))
+(defun my/counsel-rg-at-point ()
+  (interactive)
+    (counsel-rg (and (symbol-at-point) (thing-at-point 'symbol))))
 
 (defun my/ripgrep-run (arguments)
   (compilation-start

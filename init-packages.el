@@ -11,8 +11,6 @@
 
 (use-package command-log-mode :ensure t)
 
-(use-package deadgrep :ensure t)
-
 (use-package elisp-def :ensure t)
 
 ;; (use-package flycheck-pos-tip
@@ -32,8 +30,13 @@
 
 (use-package flyspell-correct-ivy :ensure t)
 
-;(use-package gruvbox-theme :ensure t)
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
 
+(use-package company-graphviz-dot
+  )
 
 (use-package persistent-scratch
   :ensure t
