@@ -26,6 +26,7 @@
  "a"  'mark-whole-buffer
  "i"  'evil-visual-line
  "o"  'evil-visual-block
+ "r"  'evil-surround-region
  "u"  'er/contract-region
  "v"  'er/expand-region
  )
@@ -104,12 +105,6 @@
   "G"    (lambda () (interactive) (find-file my-org-checklist-file))
   "SPC"  'switch-to-terminal
   "RET"  'hydra-org-cycle-agenda-files/body
-  "1"    'select-dmsmeta-1
-  "2"    'select-dmsmeta-2
-  "3"    'select-dmsmeta-3
-  "4"    'select-dmsmeta-4
-  "5"    'select-dmsmeta-5
-  "6"    'select-dmsmeta-6
   )
 
 (my-m-def
@@ -465,7 +460,6 @@
   ("k"  kill "kill ps")
   ("n"  tab-rename "tab new")
   ("m"  man "man")
-  ("p"  psql-dmsmeta "psql-dmsmeta")
   ("r"  recompile "recompile")
   ("q"  query-replace "query-replace")
   ("v"  hydra-vc/body "vc")

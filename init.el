@@ -14,6 +14,7 @@
 (require 'init-packages)
 (require 'init-ui)
 (require 'init-org)
+(require 'init-capture)
 ;(require 'init-dired)
 (require 'init-shell)
 ;(require 'init-elisp)
