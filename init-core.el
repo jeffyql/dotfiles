@@ -222,7 +222,16 @@ has been displayed in this session."
     )
   )
 
-(use-package magit :ensure t)
+(use-package magit
+  :ensure t
+  :config
+  (progn
+    (defun my/magit-status ()
+      (interactive)
+      (let ((pop-up-windows nil))
+        (magit-status)))
+    )
+  )
 
 (use-package org
   :ensure t
@@ -441,38 +450,6 @@ has been displayed in this session."
       (my/split-window-horizontally)
     (my/split-window-vertically)))
 
-(defun move-splitter-left ()
-  "Move window splitter left."
-  (interactive)
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (shrink-window-horizontally 2)
-    (enlarge-window-horizontally 2)))
-
-(defun move-splitter-right ()
-  "Move window splitter right."
-  (interactive)
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (enlarge-window-horizontally 2)
-    (shrink-window-horizontally 2)))
-
-(defun move-splitter-up ()
-  "Move window splitter up."
-  (interactive)
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (enlarge-window 2)
-    (shrink-window 2)))
-
-(defun move-splitter-down ()
-  "Move window splitter down."
-  (interactive)
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (shrink-window 2)
-    (enlarge-window 2)))
-
 (defun my/swap-window ()
   (interactive)
   (if (eq (selected-frame) (next-frame))
@@ -486,6 +463,34 @@ has been displayed in this session."
     (set-window-buffer window1 buffer2)
     (set-window-buffer window2 buffer1)
     (select-window window2)))
+
+(defun my/move-splitter-left-or-up ()
+  "Move window splitter left or up"
+  (interactive)
+  (let ((windmove-wrap-around))
+    (cond
+     ((windmove-find-other-window 'right)
+      (shrink-window-horizontally 2))
+     ((windmove-find-other-window 'left)
+      (enlarge-window-horizontally 2))
+     ((windmove-find-other-window 'up)
+      (enlarge-window 2))
+     ((windmove-find-other-window 'down)
+      (shrink-window 2)))))
+
+(defun my/move-splitter-right-or-down ()
+  "Move window splitter right or down."
+  (interactive)
+  (let ((windmove-wrap-around))
+    (cond
+     ((windmove-find-other-window 'right)
+      (enlarge-window-horizontally 2))
+     ((windmove-find-other-window 'left)
+      (shrink-window-horizontally 2))
+     ((windmove-find-other-window 'up)
+      (shrink-window 2))
+     ((windmove-find-other-window 'down)
+      (enlarge-window 2)))))
 
 ;;; ivy
 (defun my/swiper-symbol ()
@@ -567,29 +572,43 @@ has been displayed in this session."
    (interactive)
    (my/recentf-by-type "\\.el$\\|\\.el.gz$" t))
  
- (defun my/recentf-org ()
-   (interactive)
-   (my/recentf-by-type "\\.org$" t))
- 
+(defun my/recentf-org ()
+  (interactive)
+  (let* ((list (cl-remove-if-not  (lambda (x) (string-match "\\.org$" x)) recentf-list))
+         (list (if (equal (buffer-file-name) (car list)) (cdr list) list))
+         (list (mapcar (lambda (f) (org-roam--get-title-or-slug f)) list)))
+    (ivy-read "Select file: " list
+              :action (lambda (f)
+                        (with-ivy-window
+                          (find-file f)))
+              :caller 'my/recentf-org)))
+
  (defun my/recentf-misc (&optional arg)
    (interactive "P")
    (my/recentf-by-type (concat my-main-language-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz") nil arg))
- 
-(defun my/last-file-by-type (filter)
-  (let* ((next-window-file
-          (and (not (eq (selected-frame) (next-frame)))
-               (buffer-file-name
-                (window-buffer (next-window (selected-window) nil 'visible)))))
-         file)
-    (setq file
-          (catch 'done
-            (cl-loop for file in recentf-list do
-                     (unless (or (not (string-match filter file))
-                                 (equal file buffer-file-name)
-                                 (equal file next-window-file))
-                       (throw 'done file)))))
-    (if (file-exists-p file)
-        (find-file file))))
+
+ (defun my/last-file-by-type (filter &optional negate)
+  (let ((next-buf (unless (one-window-p) (window-buffer (next-window))))
+        (list recentf-list))
+    (if next-buf
+        (with-current-buffer next-buf
+          (when buffer-file-name
+            (recentf-add-file buffer-file-name)
+            (setq list (cdr list)))))
+    (when buffer-file-name
+      (setq list (cdr list)))
+    (catch 'done
+      (cl-loop for file in list do
+               (if negate
+                   (unless (string-match-p filter file)
+                     (throw 'done file))
+                 (if (string-match-p filter file)
+                        (throw 'done file)))))))
+
+(defun my/open-last-file-by-type (filter)
+  (let ((file (my/last-file-by-type filter)))
+    (when (and file (file-exists-p file))
+      (find-file file))))
 
 (defun my/last-file-by-type-and-project (filter project)
   (let (file buf)
@@ -597,7 +616,7 @@ has been displayed in this session."
       (cl-loop for file in recentf-list do
                (setq buf (get-file-buffer file))
                (if (and (string-match-p filter file)
-                        (or (not buf) (not (get-buffer-window buf)))
+                        (not (and buf (get-buffer-window buf)))
                         (string-prefix-p project file))
                    (throw 'done file))))))
 
@@ -606,18 +625,28 @@ has been displayed in this session."
     (when (and file (file-exists-p file))
       (find-file file))))
 
-(defun my/last-main-language-file (&optional arg)
+(defun my/open-last-main-language-file (&optional arg)
   (interactive "P")
   (let ((project (my/get-recentf-project my-main-language-filter arg)))
     (my/open-last-file-by-type-and-project
      my-main-language-filter
      project)))
 
-(defun my/last-main-language-file ()
+(defun my/last-log-file ()
   (interactive)
-  (my/last-file-by-type my-main-language-filter))
+  (let (file)
+    (setq file (my/last-file-by-type "capture[0-9]+\\|\\.log$"))
+    (if (file-exists-p file)
+        (find-file file) 
+      (message "no log file found"))))
 
-(defun my/last-org-file ()
+
+(defun my/open-last-file-by-type-and-project (filter project)
+  (let ((file (my/last-file-by-type-and-project filter project)))
+    (when (and file (file-exists-p file))
+      (find-file file))))
+
+(defun my/open-last-org-file ()
   (interactive)
   (my/last-file-by-type "\\.org$"))
 

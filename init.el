@@ -11,26 +11,38 @@
 ;;(require 'init-lib)
 (require 'init-local-info)
 (require 'init-elisp)
-(require 'init-packages)
+;(require 'init-packages)
+
 (require 'init-ui)
+
 (require 'init-org)
 (require 'init-capture)
-;(require 'init-dired)
 (require 'init-shell)
-;(require 'init-elisp)
-;; (require 'init-tramp)
-; (require 'init-magit)
-;; (require 'init-docker)
+(require 'init-elisp)
 (require 'init-snippets)
 (require 'init-ide)
-;(require 'init-c++)
 (require 'init-terminal)
 (require 'init-vterm)
 
+(require 'init-prog)
+
+
+
+
+
+
+;(require 'init-dired)
+;(require 'init-c++)
+;; (require 'init-tramp)
+; (require 'init-magit)
+;; (require 'init-docker)
 ;; (require 'init-postgres)
 
 ;; (require 'config-macros)
 ;; (require 'config-python)
+
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
 
 (server-start)
 (provide 'init)
