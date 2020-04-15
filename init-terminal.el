@@ -16,7 +16,6 @@
         (vterm-yank)
       (yank))))
 
-
 ;;;;; escape key for terminal mode
 (defvar my-esc-map nil)
 
@@ -39,4 +38,10 @@
 
 (add-hook 'minibuffer-setup-hook 'my-init-esc)
 
+(use-package evil-terminal-cursor-changer
+  :if (not (display-graphic-p))
+  :demand
+  :config
+  (evil-terminal-cursor-changer-activate)
+  )
 (provide 'init-terminal)

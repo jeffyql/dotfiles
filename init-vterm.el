@@ -1,6 +1,8 @@
 (defvar my-command-snippets)
 (add-to-list 'savehist-additional-variables 'my-command-snippets)
 
+(setq return-to-nomal-state t)
+
 (use-package vterm
   :ensure t
   :load-path "/Users/jeff/emacs-libvterm"
@@ -38,7 +40,7 @@
   "uc"      'my/vterm-add-to-collection
   "ud"      'vterm-send-C-d
   "ue"      'vterm-send-C-e
-  "ui"      'my/vterm-insert
+  "un"      'toggle-return-to-nomal-state
   "ut"      'compilation-shell-minor-mode
   "uu"      'vterm-undo
   "ux"      'vterm-clear
@@ -46,17 +48,18 @@
   "w"       'vterm-send-M-f
   "x"       'vterm-send-C-d
   "y"       'my/vterm-send-key
-  "\\"      'my/vterm-send-key
+  "\\"      'my/vterm-send-slash-key
   "<down>"  'vterm-send-down
   "<up>"    'vterm-send-up
   "DEL"     'vterm-send-backspace
   "RET"     'vterm-send-return
   "SPC"     'vterm-send-space
+  "<xterm-paste>"  'my/xterm-paste
   )
 
 (general-define-key
  :definer 'minor-mode
- :states 'normal
+ :states '(normal motion visual)
  :keymaps 'vterm-copy-mode
  "a"       'first-error
  "b"       'evil-backward-word-begin
@@ -66,23 +69,29 @@
  "k"       'evil-previous-line
  "l"       'evil-forward-char
  "n"       'evil-ex-search-next
- "q"       'my/vterm-copy-mode-done
+ "q"       'vterm-copy-mode-done
  "u"       'vterm-copy-mode-ignore 
  "w"       'evil-forward-word-begin
  "x"       'vterm-copy-mode-ignore 
  "y"       'vterm-copy-mode-done
  "DEL"     'my/evil-scroll-up
  "SPC"     'my/evil-scroll-down
- "RET"     'my/vterm-copy-mode-done
-  "<escape>"     'my/vterm-copy-mode-done
+ "RET"     'vterm-copy-mode-done
+ "<escape>"     'vterm-copy-mode
  )
 
-(add-hook 'vterm-mode-hook
-          (lambda ()
-            (define-key global-map [xterm-paste] #'my/xterm-paste)
-            ))
-
-(advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+(general-define-key
+ :definer 'minor-mode
+ :states 'visual
+ :keymaps 'vterm-copy-mode
+ "a"  'mark-whole-buffer
+ "i"  'evil-visual-line
+ "o"  'evil-visual-block
+ "u"  'er/contract-region
+ "v"  'er/expand-region
+ "RET"     'vterm-copy-mode-done
+  "<escape>"     (lambda () (interactive) (vterm-copy-mode -1) (keyboard-quit))
+ )
 
 (defun my/vterm-ivy-yank ()
   (interactive)
@@ -106,6 +115,21 @@
   (let ((base (event-basic-type last-input-event)))
     (vterm-send-key (char-to-string base))))
 
+(defun my/vterm-send-slash-key ()
+  (interactive)
+  (let ((inhibit-read-only t)
+        event modifier base)
+    (vterm-send-key "\\")
+    (setq event (read-event)
+          modifier (event-modifiers event)
+          base (event-basic-type event))
+    (if modifier
+        (error "invalid input"))
+    (unless (characterp base)
+      (error "invalid input"))
+    (vterm-send-key (char-to-string base))
+    (vterm-send-return)))
+
 (defun my/vterm-insert-state (&optional tab-func)
   (interactive)
   (unless vterm--term
@@ -120,7 +144,7 @@
               base (event-basic-type event))
         (if (not modifier)
             (cond
-             ((eq base 'return) (message "done") (throw :exit nil))
+             ((eq base 'return) (message "done") (evil-emacs-state) (throw :exit nil))
              ((eq base 'backspace) (vterm-send-backspace))
              ((eq base 'tab)
               (if tab-func (funcall tab-func) (vterm-send-tab)))
@@ -139,36 +163,29 @@
              ((= base ?\[) (vterm-send-C-f) (sit-for 0.1) (throw :exit nil))
              ((= base ?i)
               (if tab-func (funcall tab-func) (vterm-send-tab)))
-             ((= base ?m) (message "done") (throw :exit nil))
+             ((= base ?m) (message "done") (evil-emacs-state) (throw :exit nil))
              (t nil)))
            (t nil)))
         (message "======insert=======insert======insert======")
           ))))
 
-(defun my/vterm-send-return ()
+(defun toggle-return-to-nomal-state ()
   (interactive)
-  (vterm-send-return)
-  (evil-normal-state))
-
-(defun my/vterm-copy-mode-done ()
-  (interactive)
-  (if (region-active-p)
-      (kill-ring-save (region-beginning) (region-end)))
-  (vterm-copy-mode -1))
+  (if return-to-nomal-state
+      (setq return-to-nomal-state nil)
+    (setq return-to-nomal-state t)))
 
 (defun my/xterm-paste (event)
   "Handle the start of a terminal paste operation."
   (interactive "e")
+  (if vterm-copy-mode
+      (error "not allowed in copy mode"))
   (unless (eq (car-safe event) 'xterm-paste)
     (error "xterm-paste must be found to xterm-paste event"))
   (let* ((inhibit-read-only t)
          (pasted-text (nth 1 event))
          (interprogram-paste-function (lambda () pasted-text)))
-    (if (eq major-mode 'vterm-mode)
-        (progn
-          (vterm-copy-mode-done)
-          (vterm-yank))
-      (yank))))
+    (vterm-yank)))
 
 (defvar vterm-command-beginging 1)
 
@@ -231,8 +248,8 @@
 
 (defun my/vterm-send-C-r ()
   (interactive)
-  (evil-emacs-state)
-  (vterm-send-C-r))
+  (vterm-send-C-r)
+  (my/vterm-insert-state 'vterm-send-C-r))
 
 (defun my/vterm-capture ()
   (interactive)
@@ -262,8 +279,9 @@
     (message "%s is choosen" my-vterm-selected-buffer)
   ))
 
-(defun get-create-vterm (buf-name &optional other-window)
+(defun get-create-vterm (buf-name)
   (let ((default-directory "~")
+        (pop-up-windows nil)
         (buffer (get-buffer buf-name)))
     (unless buffer
       (setq buffer (generate-new-buffer buf-name))
@@ -271,9 +289,16 @@
         (vterm-mode)))
     (if (or (one-window-p) (not (eq major-mode 'org-mode)))
         (pop-to-buffer-same-window buffer)
-      (switch-to-buffer-other-window buffer) 
+      (pop-to-buffer-other-window buffer) 
       (other-window 1)
       )))
+
+(defun vterm-by-number ()
+  (interactive)
+  (let ((base (event-basic-type last-input-event)))
+    (unless (and (characterp base) (>= base ?0) (<= base ?9))
+      (error "not a digit"))
+    (get-create-vterm (concat "vterm-" (char-to-string base)))))
 
 (defvar known-vterms nil)
 

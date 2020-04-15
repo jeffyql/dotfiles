@@ -1,8 +1,8 @@
 ;; Keybindings
 
-(general-def 'normal org-mode-map
- "RET" 'my/org-open-link
- )
+(general-def 'normal 'org-mode
+  "RET" 'org-open-at-point
+  )
 
 (general-define-key
  :definer 'minor-mode
@@ -23,29 +23,6 @@
   :keymaps 'org-mode-map
   "c"   'org-ctrl-c-ctrl-c
   )
-(use-package org-roam
-  :hook 
-  (after-init . org-roam-mode)
-  :custom
-  (org-roam-completion-system 'ivy)
-  (org-roam-directory "/Users/jeff/mib/roam/")
-  (org-roam-link-title-format "R:%s")
-  )
-
-8 (require 'org-journal)
- 19 (setq org-journal-date-prefix "#+TITLE: ")
- 20 (setq org-journal-file-format "%Y-%m-%d.org")
- 21 (setq org-journal-date-format "%A, %d %B %Y")
- 22 (setq org-journal-dir (concat my-mib-dir "roam"))
- 23
- 24 (require 'deft)
- 25 (setq deft-extensions '("org"))
- 26 (setq deft-directory (concat my-mib-dir "roam"))
- 27
- 28 (require 'emacsql)
- 29 (require 'emacsql-sqlite)
- 30 (require 'org-roam)
- 31 (setq org-roam-directory (concat my-mib-dir "roam"))
 
 (my-mf-def
   :states 'normal
@@ -171,24 +148,18 @@
 
 ;(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 
-(add-hook 'org-capture-prepare-finalize-hook
-          (lambda ()
-            (ignore-errors 
-              (outline-back-to-heading)
-              (org-set-tags nil t))))
+;; (add-hook 'org-capture-prepare-finalize-hook
+;;           (lambda ()
+;;             (ignore-errors 
+;;               (outline-back-to-heading)
+;;               (org-set-tags nil t))))
 
-(add-hook 'org-capture-mode-hook 'evil-insert-state)
-
-(setq org-capture-templates
-      '(
-        ("i" "Inbox" entry (file my-org-reminders-file) "* TODO %?\n  %t" :prepend t)
-        ("l" "emacs link topic" entry (file my-org-code-bookmark-file) "* %?\n")
-        ))
+;; (add-hook 'org-capture-mode-hook 'evil-insert-state)
 
 
-(defun my/capture-a-reminder ()
-  (interactive)
-  (org-capture nil "i"))
+;; (defun my/capture-a-reminder ()
+;;   (interactive)
+;;   (org-capture nil "i"))
 
 (defun my/ivy-regex-org-heading (str)
   (ivy--regex-ignore-order (concat "^\\* " str)))
@@ -215,13 +186,6 @@
     (my/org-open-link)
     ))
 
-(defun my/org-open-link ()
-  (interactive)
-  (unless (org-in-regexp org-any-link-re)
-    (org-next-link))
-  (when (org-in-regexp org-any-link-re) 
-    (org-open-at-point)
-    ))
 (defun my/org-open-link ()
    (interactive)
    (save-excursion

@@ -11,6 +11,8 @@
 
 (use-package command-log-mode :ensure t)
 
+(use-package drag-stuff :ensure t)
+
 (use-package elisp-def :ensure t)
 
 ;; (use-package flycheck-pos-tip

@@ -8,18 +8,18 @@
   :prefix "m")
 
 (general-def '(motion normal visual) 'override
- ";"   'avy-goto-word-1
- ","   'my/select-tab-or-toggle-buffer
- "'"   'my/toggle-buffer
- "t"   'universal-argument
- "s"   'my/select-window
+  ";"   'avy-goto-word-1
+  ","   'my/select-tab-or-toggle-buffer
+  "'"   'my/toggle-buffer
+  "t"   'universal-argument
+  "s"   'my/select-window
  )
 
 (general-def '(motion normal visual)
- "q"   'my/kill-this-buffer
- "DEL" 'my/scroll-up
- "SPC" 'my/scroll-down
- "TAB" nil
+  "q"   'my/kill-this-buffer
+  "DEL" 'my/evil-scroll-up
+  "SPC" 'my/evil-scroll-down
+  "TAB" nil
  )
 
 (general-def 'visual
@@ -43,9 +43,7 @@
  "<s-down>" nil
  )
 
-(my-f-def
-  :states 'normal
-  :keymaps 'override
+(my-f-def 'normal 'override
   "ESC"  'keyboard-quit
   "a"    'my/recentf-misc
   "d"    'dired
@@ -59,7 +57,7 @@
   "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper
   "n"    'my/swiper-symbol
-  "o"    'my/recentf-org-file
+  "o"    'my/recentf-org
   "p"    'my/projectile-find-file
   "r"    'my/counsel-rg-org-search
   "s"    'ivy-switch-buffer
@@ -77,9 +75,7 @@
   "0"    'select-vterm-0
   )
 
-(my-g-def
-  :states '(normal motion visual)
-  :keymaps 'override
+(my-g-def '(normal motion visual) 'override
   "ESC"  'keyboard-quit
   "a"    'evil-first-non-blank
   "b"    (lambda () (interactive) (move-to-window-line -1))
@@ -90,7 +86,7 @@
   "g"    'evil-goto-first-line
   "h"    (lambda () (interactive) (dired "~"))
   "i"    'my/goto-indirect-narrow-at-point
-  "j"    'my/last-main-language-file
+  "j"    'my/open-last-main-language-file
   "k"    'hydra-last-buffer-by-mode/body
   "l"    'evil-goto-line
   "m"    'my/open-last-misc-file
@@ -107,9 +103,7 @@
   "RET"  'hydra-org-cycle-agenda-files/body
   )
 
-(my-m-def
-  :states 'normal
-  :keymaps 'override
+(my-m-def 'normal 'override
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
   "c"    nil    ;;c key is reserved as major mode leader 
@@ -118,8 +112,10 @@
   "f"    nil
   "g"    nil
   "i"    'my/switch-indirect-narrow
+  "h"    'hydra-move-window-splitter-left-or-up/body
   "j"    'hydra-scroll-line-up/body
   "k"    'hydra-scroll-line-down/body
+  "l"    'hydra-move-window-splitter-right-or-down/body
   "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
@@ -136,20 +132,20 @@
   "B"    'balance-windows
   "D"    'save-buffers-kill-emacs
   "G"    'magit-dispatch-popup
-  "h"    'hydra-window-left/body
-  "l"    'hydra-window-right/body
+  "J"    'move-line-down
+  "K"    'move-line-up
   "T"    'test
   "X"    'shell-command
   ","    'my/org-store-link-to-current-line
   "ESC"  'keyboard-quit
   "SPC"  'show-terminal
   "U"    'kmacro-start-macro
-  "1"    'select-vterm-1
-  "2"    'select-vterm-2
-  "3"    'select-vterm-3
-  "4"    'select-vterm-4
-  "5"    'select-vterm-5
-  "6"    'select-vterm-6
+  "1"    'vterm-by-number
+  "2"    'vterm-by-number
+  "3"    'vterm-by-number
+  "4"    'vterm-by-number
+  "5"    'vterm-by-number
+  "6"    'vterm-by-number
   )
 
 (general-create-definer my-mc-def
@@ -160,9 +156,7 @@
   :prefix "md"
   )
 
-(my-md-def
-  :states '(normal motion visual)
-  :keymaps 'override
+(my-md-def '(normal motion visual) 'override
   "e"  'hydra-edit/body
   "f"  'hydra-file/body
   "v"  'hydra-misc/body
@@ -172,14 +166,13 @@
   :prefix "mf"
   )
 
-(my-mf-def
-  :states '(normal motion visual)
-  :keymaps 'override
-  "c"   'org-roam-build-cache
+(my-mf-def '(normal motion visual) 'override
+  "c"   'org-roam-db-build-cache
   "d"   'org-roam
   "f"   'org-roam-find-file
   "i"   'org-roam-insert
   "s"   'my/org-store-link-to-current-line
+  "t"   'my/org-roam-new-tab
   )
 
 (general-create-definer my-mv-def
@@ -192,19 +185,19 @@
   :keymaps 'override
   "b"   'my/buffer-to-file-or-new-buffer
   "f"   'magit-find-file
-  "g"   'magit-status
+  "g"   'my/magit-status
   "h"   'highlight-symbol-at-point-all-windows
   "k"   'my/current-kill-to-file-or-new-buffer
+  "p"   'my/add-or-delete-command-snippet
   "s"  (lambda () (interactive) (let ((current-prefix-arg t)) (call-interactively 'deadgrep)))
   "t"   'tab-new
+  "x"   'etcc-on
   )
 
 (general-create-definer my-z-def
   :prefix "z")
 
-(my-z-def
-  :states '(normal motion visual)
-  :keymaps 'override
+(my-z-def '(normal motion visual) 'override
   "h"   'evil-scroll-left
   "l"   'evil-scroll-right
   )
@@ -653,14 +646,14 @@
   ("d" vc-root-diff "root diff")
   )
 
-(defhydra hydra-window-left (:body-pre (move-splitter-left))
-  ("h" move-splitter-left)
-  ("l" move-splitter-right)
+(defhydra hydra-move-window-splitter-left-or-up (:body-pre (my/move-splitter-left-or-up))
+  ("h" my/move-splitter-left-or-up)
+  ("l" my/move-splitter-right-or-down)
   )
 
-(defhydra hydra-window-down (:body-pre (move-splitter-down))
-  ("j" move-splitter-down)
-  ("k" move-splitter-up)
+(defhydra hydra-move-window-splitter-right-or-down (:body-pre (my/move-splitter-right-or-down))
+  ("h" my/move-splitter-left-or-up)
+  ("l" my/move-splitter-right-or-down)
   )
 
 (defhydra hydra-window-up (:body-pre (move-splitter-up))
