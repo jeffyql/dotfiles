@@ -647,7 +647,10 @@ has been displayed in this session."
 
 (defun my/open-last-org-file ()
   (interactive)
-  (my/last-file-by-type "\\.org$"))
+  (let ((file (my/last-file-by-type "\\.org$")))
+    (if (file-exists-p file)
+        (find-file file))))
+
 
  (defun my/projectile-select-project ()
    (interactive)

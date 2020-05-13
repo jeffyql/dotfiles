@@ -1,5 +1,7 @@
 (defvar my-saved-captures-dir "~/log/")
-(defvar saved-capture-file-number nil "capture file rotation number")
+
+(unless (bound-and-true-p saved-capture-file-number)
+  (setq saved-capture-file-number 0))
 (add-to-list 'savehist-additional-variables 'saved-capture-file-number)
 
 (defun my/buffer-to-file-or-new-buffer (&optional to-file)

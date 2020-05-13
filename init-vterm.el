@@ -1,7 +1,13 @@
-(defvar my-command-snippets)
-(add-to-list 'savehist-additional-variables 'my-command-snippets)
+(require 'comint)
 
-(setq return-to-nomal-state t)
+(setq comint-input-ring-size 2000)
+(setq comint-input-ring-file-name "~/.command_snippets")
+
+(add-hook 'kill-emacs-hook #'comint-write-input-ring)
+;; Set the buffer’s ‘comint-input-ring’ from a history file.
+(unless (file-exists-p comint-input-ring-file-name)
+  (write-region "" nil comint-input-ring-file-name))
+
 
 (use-package vterm
   :ensure t
@@ -23,7 +29,7 @@
   "dga"     'vterm-send-C-u
   "dge"     'vterm-send-C-k
   "dw"      'vterm-send-M-d
-  "e"       'my/vterm-ivy-yank
+  "e"       'my/vterm-ivy-yank-command-snippet
   "h"       'vterm-send-C-b
   "i"       'my/vterm-insert
   "I"       'my/vterm-insert-line
@@ -40,44 +46,49 @@
   "uc"      'my/vterm-add-to-collection
   "ud"      'vterm-send-C-d
   "ue"      'vterm-send-C-e
-  "un"      'toggle-return-to-nomal-state
+  "ui"      'my/vterm-insert
   "ut"      'compilation-shell-minor-mode
   "uu"      'vterm-undo
   "ux"      'vterm-clear
   "u."      'vterm-send-meta-dot
   "w"       'vterm-send-M-f
   "x"       'vterm-send-C-d
-  "y"       'my/vterm-send-key
   "\\"      'my/vterm-send-slash-key
   "<down>"  'vterm-send-down
   "<up>"    'vterm-send-up
-  "DEL"     'vterm-send-backspace
+  "DEL"     'my/vterm-scroll-up
+  "<backspace>"  'my/vterm-scroll-up
   "RET"     'vterm-send-return
+  "<return>" 'vterm-send-return
   "SPC"     'vterm-send-space
   "<xterm-paste>"  'my/xterm-paste
   )
 
+(general-def '(emacs insert) 'vterm-mode-map
+  "<xterm-paste>" 'my/xterm-paste
+  )
+
 (general-define-key
  :definer 'minor-mode
- :states '(normal motion visual)
+ :states '(normal motion)
  :keymaps 'vterm-copy-mode
  "a"       'first-error
  "b"       'evil-backward-word-begin
  "h"       'evil-backward-char
- "i"       'vterm-copy-mode-ignore 
+ "i"       'my/vterm-insert
  "j"       'evil-next-line
  "k"       'evil-previous-line
  "l"       'evil-forward-char
  "n"       'evil-ex-search-next
  "q"       'vterm-copy-mode-done
  "u"       'vterm-copy-mode-ignore 
+ "v"       'evil-visual-char
  "w"       'evil-forward-word-begin
- "x"       'vterm-copy-mode-ignore 
- "y"       'vterm-copy-mode-done
+ "x"       'vterm-copy-mode-ignore
  "DEL"     'my/evil-scroll-up
  "SPC"     'my/evil-scroll-down
  "RET"     'vterm-copy-mode-done
- "<escape>"     'vterm-copy-mode
+ "<escape>"    'my/vterm-cancel-copy-mode
  )
 
 (general-define-key
@@ -90,30 +101,58 @@
  "u"  'er/contract-region
  "v"  'er/expand-region
  "RET"     'vterm-copy-mode-done
-  "<escape>"     (lambda () (interactive) (vterm-copy-mode -1) (keyboard-quit))
+ "<escape>"    'my/vterm-cancel-copy-mode
  )
 
-(defun my/vterm-ivy-yank ()
-  (interactive)
-  (ivy-read "yank: " my-command-snippets 
-            :action #'my/vterm-insert-snippet))
+(defun my/xterm-paste (event)
+  "Handle the start of a terminal paste operation."
+  (interactive "e")
+  (unless (eq (car-safe event) 'xterm-paste)
+    (error "xterm-paste must be found to xterm-paste event"))
+  (let* ((inhibit-read-only t)
+         (pasted-text (nth 1 event))
+         (interprogram-paste-function (lambda () pasted-text)))
+    (vterm-yank)))
 
-(defun my/vterm-insert-snippet (snippet)
-  (vterm-send-string snippet)
-  (setq my-command-snippets
-        (cons snippet (remove snippet my-command-snippets))))
+(defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+  (if (equal major-mode 'vterm-mode)
+      (let ((inhibit-read-only t)
+            (yank-undo-function #'(lambda(_start _end) (vterm-undo))))
+        (cl-letf (((symbol-function 'insert-for-yank)
+               #'(lambda(str) (vterm-send-string str t))))
+            (apply orig-fun args)))
+    (apply orig-fun args)))
+
+(advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+
+(defun my/vterm-ivy-yank-command-snippet ()
+  (interactive)
+  (unless comint-input-ring
+    (comint-read-input-ring 'silent))
+  (ivy-read "Yank command snippet: " (when (> (ring-size comint-input-ring) 0)
+                                       (ring-elements comint-input-ring))
+            :action #'vterm-send-string))
 
 (defun my/add-or-delete-command-snippet (&optional remove)
   (interactive "P")
+  (unless comint-input-ring
+    (comint-read-input-ring 'silent))
   (if remove
-      (ivy-read "snippet to remove: " my-command-snippets 
-                :action (lambda (s) (setq my-command-snippets (remove s my-command-snippets))))
-    (add-to-list 'my-command-snippets (read-string "add new term: "))))
+      (ivy-read "Yank command snippet: " (when (> (ring-size comint-input-ring) 0)
+                                           (ring-elements comint-input-ring))
+                :action (lambda (s) (ring-remove comint-input-ring (ring-member comint-input-ring s))))
+    (let ((comint-input-ignoredups nil))
+      (comint-add-to-input-history (read-string "add new term: ")))))
 
 (defun my/vterm-send-key ()
   (interactive)
   (let ((base (event-basic-type last-input-event)))
     (vterm-send-key (char-to-string base))))
+
+(defun my/vterm-scroll-up ()
+  (interactive)
+  (vterm-copy-mode 1)
+  (evil-scroll-up 0))
 
 (defun my/vterm-send-slash-key ()
   (interactive)
@@ -169,23 +208,14 @@
         (message "======insert=======insert======insert======")
           ))))
 
-(defun toggle-return-to-nomal-state ()
-  (interactive)
-  (if return-to-nomal-state
-      (setq return-to-nomal-state nil)
-    (setq return-to-nomal-state t)))
 
-(defun my/xterm-paste (event)
-  "Handle the start of a terminal paste operation."
-  (interactive "e")
+(defun my/vterm-cancel-copy-mode ()
+  (interactive)
+  (if (region-active-p)
+      (deactivate-mark t))
   (if vterm-copy-mode
-      (error "not allowed in copy mode"))
-  (unless (eq (car-safe event) 'xterm-paste)
-    (error "xterm-paste must be found to xterm-paste event"))
-  (let* ((inhibit-read-only t)
-         (pasted-text (nth 1 event))
-         (interprogram-paste-function (lambda () pasted-text)))
-    (vterm-yank)))
+      (vterm-copy-mode -1)
+    (vterm-reset-cursor-point)))
 
 (defvar vterm-command-beginging 1)
 
@@ -197,33 +227,31 @@
 
 (global-set-key (kbd "M-:") 'eval-expression)
 
-(add-hook 'vterm-mode-hook 'my-init-esc)
-
-
-(defun my/vterm-exit-function (buf)
-  (evil-normal-state)
+(defun my/vterm-init-hook ()
+  (my-init-esc)
+  (setq-local evil-move-cursor-back nil)
   )
 
-(add-to-list 'vterm-exit-functions 'my/vterm-exit-function)
+(add-hook 'vterm-mode-hook 'my/vterm-init-hook)
 
 (defun my/vterm-insert ()
   (interactive)
-  (evil-emacs-state)
-  (vterm-reset-cursor-point))
+  (my/vterm-cancel-copy-mode)
+  (evil-insert-state))
 
 (defun my/vterm-insert-line ()
   (interactive)
-  (evil-emacs-state)
+  (my/vterm-insert)
   (vterm-send-C-a))
 
 (defun my/vterm-append ()
   (interactive)
-  (evil-emacs-state)
+  (my/vterm-insert)
   (vterm-send-C-f))
 
 (defun my/vterm-append-line ()
   (interactive)
-  (evil-emacs-state)
+  (my/vterm-insert)
   (vterm-send-C-e))
 
 (defun my/vterm-kill-whole-line ()
@@ -251,23 +279,6 @@
   (vterm-send-C-r)
   (my/vterm-insert-state 'vterm-send-C-r))
 
-(defun my/vterm-capture ()
-  (interactive)
-  (let* ((buf (current-buffer))
-         (beg vterm-command-beginging)
-         (end (point-max))
-         (bn "vterm capture")
-         (b (get-buffer bn)))
-    (if (bufferp b)
-        (kill-buffer b))
-    (vterm-copy-mode 1)
-    (setq b (get-buffer-create bn))
-    (with-current-buffer b
-      (insert-buffer-substring buf beg end))
-    (vterm-copy-mode -1)
-    (switch-to-buffer b)
-    ))
-
 (defun my/vterm-select-buffer ()
   (interactive)
   (let* ((buf-num (read-number "Terminal Number: "))
@@ -289,8 +300,7 @@
         (vterm-mode)))
     (if (or (one-window-p) (not (eq major-mode 'org-mode)))
         (pop-to-buffer-same-window buffer)
-      (pop-to-buffer-other-window buffer) 
-      (other-window 1)
+      (pop-to-buffer buffer t) 
       )))
 
 (defun vterm-by-number ()

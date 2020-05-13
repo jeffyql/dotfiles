@@ -1,6 +1,7 @@
+
 (use-package org-roam
-      ;; :hook 
-      ;; (after-init . org-roam-mode)
+      :hook 
+      (after-init . org-roam-mode)
       :custom
       (org-roam-completion-system 'ivy)
       (org-roam-directory my-org-dir)
@@ -12,19 +13,20 @@
               :map org-mode-map
               (("C-c n i" . org-roam-insert))))
 
-(general-define-key
- :definer 'minor-mode
- :states 'normal
- :keymaps 'org-roam-mode
- "RET" 'my/org-roam-open-at-point
- )
-
-(defun my/org-roam-open-at-point ()
+(defun my/org-roam-goto-todo ()
   (interactive)
-  (setq org-roam-last-window
-        (unless (one-window-p)
-          (next-window)))
-  (org-open-at-point))
+  (if (tab-bar--tab-index-by-name "roam")
+      (tab-bar-switch-to-tab "roam")
+    (tab-bar-new-tab-to 0)
+    (tab-bar-rename-tab "roam"))
+  (find-file my-org-todo-file)
+  (org-roam-buffer--update-maybe :redisplay)
+  (setq window (get-buffer-window org-roam-buffer))
+  (if (window-live-p window)
+      (select-window window)
+    (org-roam-buffer--get-create)
+    (select-window (get-buffer-window org-roam-buffer))
+    ))
 
 (defun my/org-roam-new-tab ()
   (interactive)

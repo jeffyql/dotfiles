@@ -57,7 +57,7 @@
   "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper
   "n"    'my/swiper-symbol
-  "o"    'my/recentf-org
+  "o"   'org-roam-find-file
   "p"    'my/projectile-find-file
   "r"    'my/counsel-rg-org-search
   "s"    'ivy-switch-buffer
@@ -99,7 +99,7 @@
   ","    'pop-to-mark-command
   "."    'evil-scroll-line-to-center
   "G"    (lambda () (interactive) (find-file my-org-checklist-file))
-  "SPC"  'switch-to-terminal
+  "SPC"  'my/org-roam-goto-todo
   "RET"  'hydra-org-cycle-agenda-files/body
   )
 
@@ -169,7 +169,6 @@
 (my-mf-def '(normal motion visual) 'override
   "c"   'org-roam-db-build-cache
   "d"   'org-roam
-  "f"   'org-roam-find-file
   "i"   'org-roam-insert
   "s"   'my/org-store-link-to-current-line
   "t"   'my/org-roam-new-tab

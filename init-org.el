@@ -1,21 +1,28 @@
 ;; Keybindings
 
-(general-def 'normal 'org-mode
-  "RET" 'org-open-at-point
+(general-def normal org-mode-map
+  "RET"    'my/org-open-at-point
   )
 
-(general-define-key
- :definer 'minor-mode
- :states 'normal
- :keymaps 'org-capture-mode
- "RET" 'org-capture-finalize)
+(defun my/org-open-at-point ()
+  (interactive)
+  (let ((org-link-frame-setup
+         (if (bound-and-true-p org-roam-backlinks-mode)
+             '((file . find-file-other-window))
+           '((file . find-file)))))
+    (org-open-at-point)))
 
-(general-define-key
- :definer 'minor-mode
- :states 'normal
- :keymaps 'org-src-mode
- "RET" 'org-edit-src-exit)
-66
+;; (general-define-key
+;;  :definer 'minor-mode
+;;  :states 'normal
+;;  :keymaps 'org-capture-mode
+;;  "RET" 'org-capture-finalize)
+
+;; (general-define-key
+;;  :definer 'minor-mode
+;;  :states 'normal
+;;  :keymaps 'org-src-mode
+;;  "RET" 'org-edit-src-exit)
 
 ;; mode local keybindings
 (my-m-def
