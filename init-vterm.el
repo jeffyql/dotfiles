@@ -1,14 +1,12 @@
 (require 'comint)
 
-(setq comint-input-ring-size 2000)
-(setq comint-input-ring-file-name "~/.command_snippets")
+(setq my-command-snippets-file (concat my-mib-dir "command_snippets.txt"))
+(unless (file-exists-p my-command-snippets-file)
+  (setq my-command-snippets nil)
+  (my/write-var 'my-command-snippets my-command-snippets-file))
+(load my-command-snippets-file)
 
-(add-hook 'kill-emacs-hook #'comint-write-input-ring)
-;; Set the buffer’s ‘comint-input-ring’ from a history file.
-(unless (file-exists-p comint-input-ring-file-name)
-  (write-region "" nil comint-input-ring-file-name))
-
-
+(add-hook 'kill-emacs-hook #'my/write-command-snippets-to-file)
 (use-package vterm
   :ensure t
   :load-path "/Users/jeff/emacs-libvterm"
@@ -125,24 +123,28 @@
 
 (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
 
+(defun my/vterm-yank-command-snippet-action (s)
+  (vterm-send-string s)
+  (setq my-command-snippets (cons s (remove s my-command-snippets))))
+
 (defun my/vterm-ivy-yank-command-snippet ()
   (interactive)
   (unless comint-input-ring
     (comint-read-input-ring 'silent))
-  (ivy-read "Yank command snippet: " (when (> (ring-size comint-input-ring) 0)
-                                       (ring-elements comint-input-ring))
-            :action #'vterm-send-string))
+  (ivy-read "Yank command snippet: " my-command-snippets
+            :action #'my/vterm-yank-command-snippet-action))
 
 (defun my/add-or-delete-command-snippet (&optional remove)
   (interactive "P")
-  (unless comint-input-ring
-    (comint-read-input-ring 'silent))
   (if remove
-      (ivy-read "Yank command snippet: " (when (> (ring-size comint-input-ring) 0)
-                                           (ring-elements comint-input-ring))
-                :action (lambda (s) (ring-remove comint-input-ring (ring-member comint-input-ring s))))
-    (let ((comint-input-ignoredups nil))
-      (comint-add-to-input-history (read-string "add new term: ")))))
+      (ivy-read "Yank command snippet: " my-command-snippets
+                :action (lambda (s) (setq my-command-snippets (remove s my-command-snippets))))
+    (let ((snippet (read-string "command snippet to add: ")))
+      (setq my-command-snippets (cons snippet (remove snippet my-command-snippets)))
+      (my/write-var 'my-command-snippets my-command-snippets-file))))
+
+(defun my/write-command-snippets-to-file ()
+  (my/write-var 'my-command-snippets my-command-snippets-file))
 
 (defun my/vterm-send-key ()
   (interactive)

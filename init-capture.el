@@ -1,5 +1,12 @@
 (defvar my-saved-captures-dir "~/log/")
 
+(defun my/write-var (var file)
+  (let ((buf (find-file-noselect file)))
+    (with-current-buffer buf
+      (erase-buffer)
+      (print (list 'setq var (list 'quote (symbol-value var))) (point-min-marker))
+      (save-buffer))))
+
 (unless (bound-and-true-p saved-capture-file-number)
   (setq saved-capture-file-number 0))
 (add-to-list 'savehist-additional-variables 'saved-capture-file-number)
