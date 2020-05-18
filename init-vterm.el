@@ -26,7 +26,7 @@
   "dga"     'vterm-send-C-u
   "dge"     'vterm-send-C-k
   "dw"      'vterm-send-M-d
-  "e"       'my/vterm-ivy-yank-command-snippet
+  "e"       'my/vterm-yank-command-snippet
   "h"       'vterm-send-C-b
   "i"       'my/vterm-insert
   "I"       'my/vterm-insert-line
@@ -124,16 +124,12 @@
 
 (add-to-list 'my-saved-lists-alist (cons 'my-command-snippets my-command-snippets-file))
 
-(defun my/vterm-yank-command-snippet-action (s)
-  (vterm-send-string s)
-  (setq my-command-snippets (cons s (remove s my-command-snippets))))
-
-(defun my/vterm-ivy-yank-command-snippet ()
+(defun my/vterm-yank-command-snippet ()
   (interactive)
-  (unless comint-input-ring
-    (comint-read-input-ring 'silent))
-  (ivy-read "Yank command snippet: " my-command-snippets
-            :action #'my/vterm-yank-command-snippet-action))
+  (let ((selected (my/saved-lists-select 'my-command-snippets)))
+    (if (eq major-mode 'vterm-mode)
+        (vterm-send-string selected)
+      (insert selected))))
 
 (defun my/add-or-remove-command-snippet (&optional remove)
   (interactive "P")

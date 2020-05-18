@@ -31,12 +31,19 @@
               (if (= (line-number-at-pos beg t)  (line-number-at-pos end t))
                   (buffer-substring beg end))))
        (unless element
-         (setq element (read-string "add new term: " default)))
-      (setq element (read-string "command element to add: "))
+         (setq element (read-string "add new term: ")))
       (setq var (cons element (remove element var)))
       (when (> (length var) 2000)
         (setq var (butlast var))))
     (set var-symbol var)))
+
+(defun my/saved-lists-select (var-symbol)
+  (let ((var (symbol-value var-symbol))
+        selected)
+    (ivy-read "Select item: " var
+              :action #'(lambda (e) (setq selected e)
+                               (set var-symbol (cons e (remove e var)))))
+    selected))
 
 (defun my/saved-lists-alist-save ()
   (cl-loop for var-name in my-saved-lists-alist do
