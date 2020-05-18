@@ -187,7 +187,7 @@
   "g"   'my/magit-status
   "h"   'highlight-symbol-at-point-all-windows
   "k"   'my/current-kill-to-file-or-new-buffer
-  "p"   'my/add-or-delete-command-snippet
+  "p"   'my/add-or-remove-command-snippet
   "s"  (lambda () (interactive) (let ((current-prefix-arg t)) (call-interactively 'deadgrep)))
   "t"   'tab-new
   "x"   'etcc-on

@@ -13,6 +13,11 @@
   (package-install 'use-package))
 
 (require 'init-core)
+(require 'init-capture)
+(require 'init-narrow)
+(require 'init-recentf)
+(require 'init-saved-lists)
+(require 'init-send-command)
 (require 'init-keybindings)
 ;;(require 'init-lib)
 (require 'init-local-info)
@@ -23,7 +28,6 @@
 
 (require 'init-org)
 (require 'init-org-roam)
-(require 'init-capture)
 (require 'init-shell)
 (require 'init-elisp)
 (require 'init-snippets)

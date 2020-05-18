@@ -1,12 +1,11 @@
-(require 'comint)
+(setq my-command-snippets-file (concat my-mib-dir "command_snippets.txt")
+      my-command-snippets-max-size 2000)
 
-(setq my-command-snippets-file (concat my-mib-dir "command_snippets.txt"))
-(unless (file-exists-p my-command-snippets-file)
-  (setq my-command-snippets nil)
-  (my/write-var 'my-command-snippets my-command-snippets-file))
-(load my-command-snippets-file)
+(if (file-exists-p my-command-snippets-file)
+    (load my-command-snippets-file)
+  (when (y-or-n-p "initialize command snippets? ")
+    (setq my-command-snippets nil)))
 
-(add-hook 'kill-emacs-hook #'my/write-command-snippets-to-file)
 (use-package vterm
   :ensure t
   :load-path "/Users/jeff/emacs-libvterm"
@@ -123,6 +122,8 @@
 
 (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
 
+(add-to-list 'my-saved-lists-alist (cons 'my-command-snippets my-command-snippets-file))
+
 (defun my/vterm-yank-command-snippet-action (s)
   (vterm-send-string s)
   (setq my-command-snippets (cons s (remove s my-command-snippets))))
@@ -134,17 +135,9 @@
   (ivy-read "Yank command snippet: " my-command-snippets
             :action #'my/vterm-yank-command-snippet-action))
 
-(defun my/add-or-delete-command-snippet (&optional remove)
+(defun my/add-or-remove-command-snippet (&optional remove)
   (interactive "P")
-  (if remove
-      (ivy-read "Yank command snippet: " my-command-snippets
-                :action (lambda (s) (setq my-command-snippets (remove s my-command-snippets))))
-    (let ((snippet (read-string "command snippet to add: ")))
-      (setq my-command-snippets (cons snippet (remove snippet my-command-snippets)))
-      (my/write-var 'my-command-snippets my-command-snippets-file))))
-
-(defun my/write-command-snippets-to-file ()
-  (my/write-var 'my-command-snippets my-command-snippets-file))
+  (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
 
 (defun my/vterm-send-key ()
   (interactive)
