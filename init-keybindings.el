@@ -57,7 +57,6 @@
   "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper
   "n"    'my/swiper-symbol
-  "o"   'org-roam-find-file
   "p"    'my/projectile-find-file
   "r"    'my/counsel-rg-org-search
   "s"    'ivy-switch-buffer
@@ -107,8 +106,8 @@
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
   "c"    nil    ;;c key is reserved as major mode leader 
-  "d"    nil
-  "e"    'my/send-command
+  "e"    nil
+  "d"    'my/send-command
   "f"    nil
   "g"    nil
   "i"    'my/switch-indirect-narrow
@@ -140,6 +139,7 @@
   "ESC"  'keyboard-quit
   "SPC"  'show-terminal
   "U"    'kmacro-start-macro
+  "1"    'test
   "1"    'vterm-by-number
   "2"    'vterm-by-number
   "3"    'vterm-by-number
@@ -152,26 +152,18 @@
   :prefix "mc"
   )
 
-(general-create-definer my-md-def
-  :prefix "md"
-  )
+;(general-create-definer my-md-def
+;  :prefix "md"
+;  )
 
-(my-md-def '(normal motion visual) 'override
-  "e"  'hydra-edit/body
-  "f"  'hydra-file/body
-  "v"  'hydra-misc/body
-  )
+;(my-md-def '(normal motion visual) 'override
+;  "e"  'hydra-edit/body
+;  "f"  'hydra-file/body
+;  "v"  'hydra-misc/body
+;  )
 
 (general-create-definer my-mf-def
   :prefix "mf"
-  )
-
-(my-mf-def '(normal motion visual) 'override
-  "c"   'org-roam-db-build-cache
-  "d"   'org-roam
-  "i"   'org-roam-insert
-  "s"   'my/org-store-link-to-current-line
-  "t"   'my/org-roam-new-tab
   )
 
 (general-create-definer my-mv-def

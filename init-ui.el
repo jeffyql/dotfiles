@@ -63,21 +63,24 @@
 
 (use-package doom-modeline
   :ensure t
-  :custom-face
-  (mode-line ((t (:height 1.0))))
-  (mode-line-inactive ((t (:height 1.0))))
+  :init
+    (setq doom-modeline-modal-icon t)
+  ;; :custom-face
+  ;; (mode-line ((t (:height 1.0))))
+  ;; (mode-line-inactive ((t (:height 1.0))))
   :config
   (progn
-    (setq doom-modeline-buffer-file-name-style 'relative-from-project
-          doom-one-brighter-modeline t)
-    (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
-    (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
-    (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
-    (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
-    (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
-    (set-face-foreground 'doom-modeline-evil-visual-state "gray")
-    (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
-    (doom-modeline-init)
+
+  ;;   (setq doom-modeline-buffer-file-name-style 'relative-from-project
+  ;;         doom-one-brighter-modeline t)
+  ;;   (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
+  ;;   (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
+  ;;   (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
+  ;;   (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
+  ;;   (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
+  ;;   (set-face-foreground 'doom-modeline-evil-visual-state "gray")
+  ;;   (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
+  ;;   (doom-modeline-init)
     )
   :hook (after-init . doom-modeline-mode))
 

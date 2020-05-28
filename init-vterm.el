@@ -40,7 +40,7 @@
   "r"       'my/vterm-send-C-r
   "u"       nil
   "ua"      'vterm-send-C-a
-  "uc"      'my/vterm-add-to-collection
+  "uc"      'my/vterm-save-current-command
   "ud"      'vterm-send-C-d
   "ue"      'vterm-send-C-e
   "ui"      'my/vterm-insert
@@ -208,8 +208,6 @@
       (vterm-copy-mode -1)
     (vterm-reset-cursor-point)))
 
-(defvar vterm-command-beginging 1)
-
 (defvar my-vterm-selected-buffer nil)
 ;; (add-to-list 'vterm-keymap-exceptions "C-l")
 (add-to-list 'vterm-keymap-exceptions "M-:")
@@ -317,5 +315,18 @@
     (vterm-send-string (concat "cd" " " dir))
     (vterm-send-return)))
 
+(defun my/vterm-save-current-command ()
+  (interactive)
+  (let (beg end cmd)
+    (vterm-reset-cursor-point)
+    (vterm-send-C-a)
+    (sleep-for 0.1)
+    (setq beg (vterm--get-cursor-point))
+    (vterm-send-C-e)
+    (sleep-for 0.1)
+    (setq end (vterm--get-cursor-point))
+    (setq cmd (buffer-substring-no-properties beg end))
+    (message "saved command: %s" cmd)
+    (kill-new cmd)))
 
 (provide 'init-vterm)

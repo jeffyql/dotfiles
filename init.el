@@ -26,6 +26,7 @@
 
 (require 'init-ui)
 
+(require 'init-org-keybinding)
 (require 'init-org)
 (require 'init-org-roam)
 (require 'init-shell)

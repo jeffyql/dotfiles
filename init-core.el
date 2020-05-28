@@ -265,11 +265,11 @@ has been displayed in this session."
     (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
     ))
 
-(use-package shackle
-  :ensure t
-  :config
-  (setq shackle-default-rule '(:same t))
-  (shackle-mode 1))
+;; (use-package shackle
+;;   :ensure t
+;;   :config
+;;   (setq shackle-default-rule '(:same t))
+;;   (shackle-mode 1))
 
 (use-package undo-tree :ensure t)
 
@@ -279,10 +279,10 @@ has been displayed in this session."
   (which-key-mode)
   )
 
-(use-package winum
-  :ensure t
-  :config
-  (winum-mode))
+;; (use-package winum
+;;   :ensure t
+;;   :config
+;;   (winum-mode))
 
 ;;; editing
 
@@ -512,6 +512,7 @@ has been displayed in this session."
   (interactive)
   (counsel-rg (current-kill 0) default-directory))
 
-(defvar my-main-language-filter "\\.c$\\|\\.h$\\|\\.cpp$\\|\\.hpp$")
+;;; misc
 
 (provide 'init-core)
+
