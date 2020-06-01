@@ -80,9 +80,9 @@
   ";"   'avy-goto-word-1
   ","   'my/select-tab-or-toggle-buffer
   "'"   'my/toggle-buffer
-  "t"   'universal-argument
-  "s"   'my/select-window
   "q"   'my/kill-this-buffer
+  "s"   'my/select-window
+  "t"   'universal-argument
   "DEL" 'my/evil-scroll-up
   "SPC" 'my/evil-scroll-down
   "TAB" nil
@@ -268,6 +268,12 @@
 (evil-define-key nil evil-normal-state-map "z" nil)
 (general-create-definer my-z-def
   :prefix "z")
+
+(my-z-def
+  :keymaps '(normal motion visual)
+  "h"   'evil-scroll-left
+  "l"   'evil-scroll-right
+  )
 
 ;;;; enable escape key
 (define-key minibuffer-local-map [escape] 'abort-recursive-edit)

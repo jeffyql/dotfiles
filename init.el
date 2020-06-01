@@ -12,8 +12,6 @@
 (require 'init-keybindings)
 (require 'init-core)
 (require 'init-packages)
-
-
 (require 'init-recentf)
 
 

@@ -179,6 +179,11 @@ has been displayed in this session."
     (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
     (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
     )
+  (defun kill-ivy-file (x)
+    (interactive)
+    (kill-buffer x)
+    (ivy--reset-state ivy-last)
+    )
   )
 
 ;;; editing

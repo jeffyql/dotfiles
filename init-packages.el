@@ -90,18 +90,18 @@
 
 (use-package sudo-edit :ensure t)
 
-(use-package treemacs
-  :ensure t
-  :init
-  (setq treemacs-no-load-time-warnings t 
-        treemacs-no-delete-other-windows nil)
-  :config
-  (progn
-    (setq treemacs-no-png-images t)
-    (set-face-attribute 'hl-line nil :background "#333333")
-    ))
+;; (use-package treemacs
+;;   :ensure t
+;;   :init
+;;   (setq treemacs-no-load-time-warnings t 
+;;         treemacs-no-delete-other-windows nil)
+;;   :config
+;;   (progn
+;;     (setq treemacs-no-png-images t)
+;;     (set-face-attribute 'hl-line nil :background "#333333")
+;;     ))
 
-(use-package undo-tree :ensure t)
+;; (use-package undo-tree :ensure t)
 
 (use-package which-key
   :ensure t
