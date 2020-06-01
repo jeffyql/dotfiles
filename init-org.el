@@ -1,3 +1,9 @@
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+
+(use-package org
+  :ensure org-plus-contrib
+  :pin org)
+
 ;;; Document structure
 (setq org-M-RET-may-split-line nil)
 

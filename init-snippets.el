@@ -116,8 +116,7 @@
       (end-of-line)
       (open-line arg)
       (next-line 1)
-      (when newline-and-indent
-        (indent-according-to-mode)))
+      (indent-according-to-mode))
 
 (defun open-previous-line (arg)
       "Open a new line before the current one. 
@@ -125,8 +124,7 @@
       (interactive "p")
       (beginning-of-line)
       (open-line arg)
-      (when newline-and-indent
-        (indent-according-to-mode)))
+      (indent-according-to-mode))
 
 (defun my/open-next-line (&optional arg)
   (interactive "P")

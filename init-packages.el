@@ -40,15 +40,45 @@
 (use-package company-graphviz-dot
   )
 
+(use-package flycheck
+  :ensure t
+  :init
+  (progn
+    ;;(add-hook 'python-mode-hook 'flycheck-mode)
+    ))
+
+(use-package ivy-dired-history
+  :ensure t
+  :init
+  (progn
+    (savehist-mode 1)
+    (add-to-list 'savehist-additional-variables 'ivy-dired-history-variable)
+    )
+  )
+
+(use-package magit
+  :ensure t
+  :config
+  (progn
+    (defun my/magit-status ()
+      (interactive)
+      (let ((pop-up-windows nil))
+        (magit-status)))
+    )
+  )
+
+(use-package outshine
+  :ensure t
+  :config
+  (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+  )
+
 (use-package persistent-scratch
   :ensure t
   :config
   (progn
     (persistent-scratch-setup-default)
     ))
-
-(use-package rg :ensure t)
-(use-package ripgrep :ensure t)
 
 (use-package subword
   :defer t
@@ -60,8 +90,6 @@
 
 (use-package sudo-edit :ensure t)
 
-(use-package tabbar :ensure t)
-
 (use-package treemacs
   :ensure t
   :init
@@ -72,6 +100,14 @@
     (setq treemacs-no-png-images t)
     (set-face-attribute 'hl-line nil :background "#333333")
     ))
+
+(use-package undo-tree :ensure t)
+
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode)
+  )
 
 (use-package xterm-color :ensure t)
 

@@ -1,3 +1,14 @@
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-mode +1)
+  :custom
+  (projectile-current-project-on-switch 'keep)
+  (projectile-completion-system 'ivy)
+  (projectile-generic-command "fd . -0")
+  (projectile-git-command "fd . -0")
+  )
+
 (defun my/recentf-by-type (filter &optional include)
   (let* ((list (if include
                     (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)

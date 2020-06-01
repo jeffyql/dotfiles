@@ -19,13 +19,12 @@
 
 (menu-bar-mode -1)
 
-(when (fboundp 'tool-bar-mode)
-  (tool-bar-mode -1))
-
 (when (fboundp 'scroll-bar-mode)
   (scroll-bar-mode -1))
 
 (blink-cursor-mode 0)
+
+(use-package tabbar :ensure t)
 
 (tab-bar-mode)
 (setq tab-bar-show 1)
@@ -55,6 +54,13 @@
   )
 
 (setq-default ring-bell-function 'ignore)
+
+(use-package rainbow-delimiters
+  :ensure t
+  :config
+  (progn
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+    ))
 
 (setq frame-title-format
       '((:eval (if (buffer-file-name)

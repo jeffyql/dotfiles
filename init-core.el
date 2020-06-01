@@ -3,6 +3,9 @@
 ;;; better default
 (setq debug-on-error t)
 
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+
 (add-hook 'after-init-hook
           (lambda () (setq debug-on-error nil)))
 
@@ -154,45 +157,7 @@ has been displayed in this session."
 
 (use-package deadgrep :ensure t)
 
-(use-package evil
-  :ensure t
-  :init
-  (progn
-    (setq evil-search-module (quote evil-search)
-          evil-symbol-word-search t)
-                                        ; (setq evil-ex-search-persistent-highlight nil)
-    (setq evil-insert-state-cursor '((bar . 2) "chartreuse3")
-          evil-normal-state-cursor '(box "DarkGoldenrod2")
-          evil-emacs-state-cursor '(box "SkyBlue2"))
-    (setq evil-shift-round nil
-          evil-move-beyond-eol t)
-    (setq evil-motion-state-modes nil)
-    (setq evil-shift-width 1)
-    (evil-mode 1)
-    (use-package evil-commentary :ensure t)
-    (use-package evil-ediff :ensure t)
-    (use-package evil-matchit :ensure t)
-    )
-)
-
-(use-package evil-surround
-  :ensure t
-  :config
-  (global-evil-surround-mode 1)
-  (evil-define-key 'visual evil-surround-mode-map "S" 'evil-surround-region))
-
 (use-package expand-region :ensure t)
-
-(use-package flycheck
-  :ensure t
-  :init
-  (progn
-    ;;(add-hook 'python-mode-hook 'flycheck-mode)
-    ))
-
-(use-package general :ensure t)
-
-(use-package hydra :ensure t)
 
 (use-package ivy
   :ensure t
@@ -203,86 +168,18 @@ has been displayed in this session."
     ;;(setq ivy-use-virtual-buffers t)
     (setq ivy-use-selectable-prompt t
           )
+    (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-occur)
+    (define-key ivy-minibuffer-map (kbd "M-j") 'next-line)
+    (define-key ivy-minibuffer-map (kbd "M-k") 'previous-line)
+    ;; keybindings on mac side
+    (define-key ivy-minibuffer-map (kbd "s-o") 'ivy-occur)
+    (define-key ivy-minibuffer-map (kbd "s-j") 'next-line)
+    (define-key ivy-minibuffer-map (kbd "s-k") 'previous-line)
+    (define-key ivy-minibuffer-map (kbd "M-;") 'kill-ivy-file)
     (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
     (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
     )
   )
-
-(use-package ivy-dired-history
-  :ensure t
-  :init
-  (progn
-    (savehist-mode 1)
-    (add-to-list 'savehist-additional-variables 'ivy-dired-history-variable)
-    )
-  )
-
-(use-package magit
-  :ensure t
-  :config
-  (progn
-    (defun my/magit-status ()
-      (interactive)
-      (let ((pop-up-windows nil))
-        (magit-status)))
-    )
-  )
-
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-
-(use-package org
-  :ensure org-plus-contrib
-  :pin org)
-
-(use-package outshine
-  :ensure t
-  :config
-  (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
-  )
-
-(use-package projectile
-  :ensure t
-  :config
-  (projectile-mode +1)
-  :custom
-  (projectile-current-project-on-switch 'keep)
-  (projectile-completion-system 'ivy)
-  (projectile-generic-command "fd . -0")
-  (projectile-git-command "fd . -0")
-  )
-;; (use-package projectile
-;;   :bind-keymap
-;;   ("C-c p" . projectile-command-map))
-;; (use-package counsel-projectile
-;;  :after (counsel projectile)
-;;  :config
-;;  (counsel-projectile-mode 1))
-
-(use-package rainbow-delimiters
-  :ensure t
-  :config
-  (progn
-    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
-    ))
-
-;; (use-package shackle
-;;   :ensure t
-;;   :config
-;;   (setq shackle-default-rule '(:same t))
-;;   (shackle-mode 1))
-
-(use-package undo-tree :ensure t)
-
-(use-package which-key
-  :ensure t
-  :config
-  (which-key-mode)
-  )
-
-;; (use-package winum
-;;   :ensure t
-;;   :config
-;;   (winum-mode))
 
 ;;; editing
 
