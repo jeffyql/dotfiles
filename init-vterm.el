@@ -63,9 +63,18 @@
   "M-i"     'evil-emacs-state
   )
 
-(general-def '(emacs insert) 'vterm-mode-map
+(general-def 'emacs 'vterm-mode-map
   "<xterm-paste>" 'my/xterm-paste
   "M-i"    'evil-normal-state
+  "M-j"    'vterm-send-down
+  "M-k"    'vterm-send-up
+  "M-p"    'my/vterm-paste-current-kill
+  "<escape>"    'my/vterm-send-escape
+  )
+
+(general-def 'insert 'vterm-mode-map
+  "<xterm-paste>" 'my/xterm-paste
+  "M-i"    'evil-emacs-state
   "M-j"    'vterm-send-down
   "M-k"    'vterm-send-up
   "M-p"    'my/vterm-paste-current-kill
@@ -281,7 +290,8 @@
 (defun my/vterm-send-escape ()
   (interactive)
   (when vterm--term
-    (process-send-string vterm--process "\C-[")))
+    (vterm-send-key "<escape>")
+    ))
 
 (defun my/vterm-select-buffer ()
   (interactive)
