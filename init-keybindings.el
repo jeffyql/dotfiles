@@ -14,7 +14,6 @@
     (setq evil-shift-width 1)
     (evil-mode 1)
 
-    (define-key evil-emacs-state-map [escape] 'evil-normal-state)
     (define-key evil-normal-state-map [escape] 'my/keyboard-quit)
     (define-key evil-visual-state-map [escape] 'keyboard-quit)
 
@@ -50,8 +49,8 @@
                 (local-unset-key ".")
                 (local-unset-key (kbd "DEL"))
                 (local-unset-key (kbd "SPC"))
-                ;; (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
-                (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-alternate-file)
+                (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
+                ;; (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-alternate-file)
                 (local-set-key   "x" 'dired-mark)
                 ))
 

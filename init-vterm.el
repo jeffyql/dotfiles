@@ -65,6 +65,7 @@
 (general-def '(emacs insert) 'vterm-mode-map
   "<xterm-paste>" 'my/xterm-paste
   "M-i"  'my/vterm-send-escape
+  "M-y"  'my/vterm-paste-current-kill
   )
 
 (general-define-key
@@ -102,6 +103,10 @@
  "RET"     'vterm-copy-mode-done
  "<escape>"    'my/vterm-cancel-copy-mode
  )
+
+(defun my/vterm-paste-current-kill ()
+  (interactive)
+  (vterm-send-string (current-kill 0)))
 
 (defun my/xterm-paste (event)
   "Handle the start of a terminal paste operation."
