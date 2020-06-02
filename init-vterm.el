@@ -60,14 +60,15 @@
   "<return>" 'vterm-send-return
   "SPC"     'vterm-send-space
   "<xterm-paste>"  'my/xterm-paste
-  "M-z"     'evil-emacs-state
+  "M-i"     'evil-emacs-state
   )
 
 (general-def '(emacs insert) 'vterm-mode-map
   "<xterm-paste>" 'my/xterm-paste
-  "M-i"  'my/vterm-send-escape
-  "M-y"  'my/vterm-paste-current-kill
-  "M-z"  'evil-normal-state
+  "M-i"    'evil-normal-state
+  "M-j"    'vterm-send-down
+  "M-k"    'vterm-send-up
+  "M-p"    'my/vterm-paste-current-kill
   )
 
 (general-define-key
