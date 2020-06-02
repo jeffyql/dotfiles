@@ -46,6 +46,7 @@
   "ui"      'my/vterm-insert
   "ut"      'compilation-shell-minor-mode
   "uu"      'vterm-undo
+  "u ESC"  'my/vterm-send-escape
   "ux"      'vterm-clear
   "u."      'vterm-send-meta-dot
   "w"       'vterm-send-M-f
@@ -63,6 +64,7 @@
 
 (general-def '(emacs insert) 'vterm-mode-map
   "<xterm-paste>" 'my/xterm-paste
+  "M-i"  'my/vterm-send-escape
   )
 
 (general-define-key
@@ -267,6 +269,11 @@
   (interactive)
   (vterm-send-C-r)
   (my/vterm-insert-state 'vterm-send-C-r))
+
+(defun my/vterm-send-escape ()
+  (interactive)
+  (when vterm--term
+    (process-send-string vterm--process "\C-[")))
 
 (defun my/vterm-select-buffer ()
   (interactive)

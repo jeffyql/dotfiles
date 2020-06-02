@@ -1,13 +1,6 @@
 (require 'package)
-(setq package-enable-at-startup nil)
 ;(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-
-;;; config packages
-;; Bootstrap `use-package'
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
 
 (require 'init-keybindings)
 (require 'init-core)
