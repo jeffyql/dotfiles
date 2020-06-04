@@ -23,8 +23,6 @@
 
 (fset 'yes-or-no-p 'y-or-n-p)
 
-(blink-cursor-mode 0)
-
 (delete-selection-mode 1)
 
 ;; highlight the current line
@@ -125,10 +123,6 @@ has been displayed in this session."
       kept-old-versions 2
       version-control t)
 
-(add-hook 'prog-mode-hook (lambda () (interactive)
-                             (display-line-numbers-mode)
-                             (setq display-line-numbers-widen t)))
-
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (setq hippie-expand-try-functions-list '(try-expand-dabbrev
@@ -186,18 +180,7 @@ has been displayed in this session."
     )
   )
 
-;;; editing
-
-(defun my/kill-ring-save-symbol-at-point ()
-  "Kill word under cursor"
-  (interactive)
-  (let (symbol)
-    (if (symbol-at-point)
-        (progn
-          (setq symbol (thing-at-point 'symbol))
-          (kill-new symbol)
-          (message "%s" symbol))
-      (message "no symbol is under the cursor"))))
+;;; navigation/search
 
 (defun my/evil-scroll-down (&optional arg)
   (interactive "P")
@@ -225,12 +208,6 @@ has been displayed in this session."
     (dired-up-directory)
     (kill-buffer buf)))
 
-(defun my/evil-ex-search-word-forward ()
-  (interactive)
-  (save-excursion
-    (call-interactively 'evil-ex-search-word-forward))
-  (beginning-of-thing 'symbol))
-
 (defun my/toggle-buffer ()
   "Toggle buffers, ignoring certain ones."
   (interactive)
@@ -243,6 +220,54 @@ has been displayed in this session."
                  (throw 'done t)))
     (message "no more candidate buffer")))
 
+(defun my/evil-ex-search-word-forward ()
+  (interactive)
+  (save-excursion
+    (call-interactively 'evil-ex-search-word-forward))
+  (beginning-of-thing 'symbol))
+
+(defun my/swiper-symbol ()
+  (interactive)
+  (let ((str (and (symbol-at-point) (thing-at-point 'symbol))))
+        (counsel-grep-or-swiper str)))
+
+(defun my/swiper-current-kill ()
+  (interactive)
+  (counsel-grep-or-swiper (current-kill 0)))
+
+(defun my/counsel-rg ()
+  (interactive)
+  (counsel-rg nil default-directory))
+
+(defun my/counsel-rg-at-point ()
+  (interactive)
+    (setq current-prefix-arg nil)
+    (counsel-rg (and (symbol-at-point) (thing-at-point 'symbol)) default-directory))
+
+(defun my/counsel-rg-current-kill ()
+  (interactive)
+  (counsel-rg (current-kill 0) default-directory))
+
+;;; read
+
+(defun my/kill-ring-save-symbol-at-point ()
+  "Kill word under cursor"
+  (interactive)
+  (let (symbol)
+    (if (symbol-at-point)
+        (progn
+          (setq symbol (thing-at-point 'symbol))
+          (kill-new symbol)
+          (message "%s" symbol))
+      (message "no symbol is under the cursor"))))
+
+;;; write
+(defun my/evil-paste-after (&optional arg)
+  (interactive "P")
+  (if arg
+      (counsel-yank-pop)
+    (call-interactively 'evil-paste-after)))
+ 
 ;;; buffer
 
 (defun my/kill-this-buffer ()
@@ -260,7 +285,6 @@ has been displayed in this session."
       (save-some-buffers)
       (call-interactively 'save-buffer)))
 
-;;; search/navigation
 ;;; frame tab and window
 
 (defun my/select-tab-or-toggle-buffer (&optional arg)
@@ -314,15 +338,6 @@ has been displayed in this session."
             (select-window first-win)
             (if this-win-2nd (other-window 1)))))))
 
-(defun my/next-frame ()
-  (interactive)
-  (let ((next-frame
-         (if (<= (length (frame-list)) 2)
-             (make-frame)
-           (next-frame))))
-    (select-frame-set-input-focus next-frame)
-    (run-hooks 'window-configuration-change-hook)))
- 
 (defun my/delete-window (&optional arg)
   (interactive "P")
   (if (equal arg '(4))
@@ -392,28 +407,6 @@ has been displayed in this session."
       (enlarge-window 2)))))
 
 ;;; ivy
-(defun my/swiper-symbol ()
-  (interactive)
-  (let ((str (and (symbol-at-point) (thing-at-point 'symbol))))
-        (counsel-grep-or-swiper str)))
-
-(defun my/swiper-current-kill ()
-  (interactive)
-  (counsel-grep-or-swiper (current-kill 0)))
-
-(defun my/counsel-rg ()
-  (interactive)
-  (counsel-rg nil default-directory))
-
-(defun my/counsel-rg-at-point ()
-  (interactive)
-    (setq current-prefix-arg nil)
-    (counsel-rg (and (symbol-at-point) (thing-at-point 'symbol)) default-directory))
-
-(defun my/counsel-rg-current-kill ()
-  (interactive)
-  (counsel-rg (current-kill 0) default-directory))
-
 ;;; misc
 
 (provide 'init-core)

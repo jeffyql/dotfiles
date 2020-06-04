@@ -36,6 +36,7 @@
                 (local-unset-key "p")
                 (local-unset-key "q")
                 (define-key evil-normal-state-local-map   "r" 'revert-buffer)
+                (local-unset-key "s")
                 (local-unset-key "t")
                 (local-unset-key "v")
                 (local-unset-key "w")
@@ -70,6 +71,11 @@
         (evil-ex-delete-hl 'evil-ex-search))
     (keyboard-quit))
 
+  (defun my/evil-insert ()
+    (interactive)
+    (if (memq major-mode evil-emacs-state-modes)
+        (evil-emacs-state 1)
+      (call-interactively 'evil-insert)))
 )
 
 (use-package general :ensure t)
@@ -79,6 +85,7 @@
   ";"   'avy-goto-word-1
   ","   'my/select-tab-or-toggle-buffer
   "'"   'my/toggle-buffer
+  "p"   'my/evil-paste-after
   "q"   'my/kill-this-buffer
   "s"   'my/select-window
   "t"   'universal-argument
@@ -198,7 +205,6 @@
   "m"    'my/save-buffer
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
-  "p"    'my/projectile-select-project
   "q"    'my/delete-or-split-window
   "r"    'my/open-next-line
   "s"    'my/occur-at-point

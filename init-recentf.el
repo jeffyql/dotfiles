@@ -146,35 +146,18 @@
     (if (file-exists-p file)
         (find-file file))))
 
-
- (defun my/projectile-select-project ()
-   (interactive)
-   (let* ((dir (read-directory-name "Select default project: " "~/" nil t))
-          (project-root (projectile-project-root dir)))
-     (unless project-root
-       (error "not a project"))
-     (setq my-default-projectile-project project-root)
-     (let ((default-directory my-default-projectile-project))
-       (projectile-dired))))
- 
- (defun my/projectile-find-dir (&optional arg)
+ (defun my/projectile-find-file ()
    (interactive "P")
-   (let ((default-directory (if arg (projectile-completing-read
-                                     "Switch to project: " projectile-known-projects)
-                               default-directory)))
-     (projectile-find-dir)))
- 
- (defun my/projectile-find-file (&optional arg)
-   (interactive "P")
-   (let ((default-directory (if arg (projectile-completing-read
-                                     "Switch to project: " projectile-known-projects)
-                               default-directory)))
+   (let ((default-directory (projectile-completing-read
+                             "Switch to project: " projectile-known-projects)
+                               ))
      (projectile-find-file)))
- 
+
  (defun my/projectile-dired ()
    (interactive)
-   (let ((projectile-switch-project-action 'projectile-dired))
-     (projectile-switch-project)))
+   (let ((default-directory (projectile-completing-read
+                             "Switch to project: " projectile-known-projects)))
+     (projectile-dired)))
 
 (defun my/ffap ()
   (interactive)
@@ -199,29 +182,5 @@
       (find-file filename)
       (if line
           (goto-line line))))
-
-(setq my-default-projectile-project nil)
-
-(defun my/projectile-select-project ()
-  (interactive)
-  (let* ((dir (read-directory-name "Select default project: " "~/" nil t))
-         (project-root (projectile-project-root dir)))
-    (unless project-root
-      (error "not a project"))
-    (setq my-default-projectile-project project-root)))
-
-(defun my/projectile-find-dir (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (let ((projectile-switch-project-action 'projectile-find-dir))
-        (projectile-switch-project))
-      (projectile-find-dir)))
-
-(defun my/projectile-find-file (&optional arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (let ((projectile-switch-project-action 'projectile-find-file))
-        (projectile-switch-project))
-      (projectile-find-file)))
 
 (provide 'init-recentf)

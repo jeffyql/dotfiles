@@ -12,7 +12,9 @@
   :config
   (progn
     (setq vterm-max-scrollback 100000
-          vterm-clear-scrollback t)
+          vterm-clear-scrollback t
+          vterm-keymap-exceptions
+          '("M-:" "C-c" "C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-y" "M-y"))
     ))
 
 (general-def '(normal motion visual) 'vterm-mode-map
@@ -245,7 +247,8 @@
 (defun my/vterm-insert ()
   (interactive)
   (my/vterm-cancel-copy-mode)
-  (evil-insert-state))
+  (evil-insert-state 1))
+  ;; (call-interactively 'evil-insert))
 
 (defun my/vterm-insert-line ()
   (interactive)

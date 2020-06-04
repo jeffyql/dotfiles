@@ -14,4 +14,8 @@
   "o"   'projectile-find-other-file
   )
 
+(add-hook 'prog-mode-hook (lambda () (interactive)
+                             (display-line-numbers-mode)
+                             (setq display-line-numbers-widen t)))
+
 (provide 'init-prog)
