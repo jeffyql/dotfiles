@@ -24,10 +24,10 @@
 
 (blink-cursor-mode 0)
 
-(use-package tabbar :ensure t)
+;; (use-package tabbar :ensure t)
 
-(tab-bar-mode)
-(setq tab-bar-show 1)
+;; (tab-bar-mode)
+;; (setq tab-bar-show 1)
 
 (setq line-number-display-limit-width 2000000
       display-line-numbers-widen t)
@@ -67,28 +67,28 @@
                    (abbreviate-file-name (buffer-file-name))
                  "%b"))))
 
-(use-package doom-modeline
-  :ensure t
-  :init
-    (setq doom-modeline-modal-icon t)
-  ;; :custom-face
-  ;; (mode-line ((t (:height 1.0))))
-  ;; (mode-line-inactive ((t (:height 1.0))))
-  :config
-  (progn
-
-  ;;   (setq doom-modeline-buffer-file-name-style 'relative-from-project
-  ;;         doom-one-brighter-modeline t)
-  ;;   (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
-  ;;   (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
-  ;;   (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
-  ;;   (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
-  ;;   (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
-  ;;   (set-face-foreground 'doom-modeline-evil-visual-state "gray")
-  ;;   (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
-  ;;   (doom-modeline-init)
-    )
-  :hook (after-init . doom-modeline-mode))
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :init
+;;   (setq doom-modeline-unicode-fallback nil)
+;;   (setq doom-modeline-modal-icon t)
+;;   :custom-face
+;;   ;; (mode-line ((t (:height 1.0))))
+;;   ;; (mode-line-inactive ((t (:height 1.0))))
+;;   :config
+;;   (progn
+;;     (setq doom-modeline-buffer-file-name-style 'relative-from-project
+;;           doom-one-brighter-modeline t)
+;;     (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
+;;     (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
+;;     (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
+;;     (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
+;;     (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
+;;     (set-face-foreground 'doom-modeline-evil-visual-state "gray")
+;;     (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
+;;     (doom-modeline-init)
+;;     )
+;;   :hook (after-init . doom-modeline-mode))
 
 ;; (defun my-doom-modeline--font-height ()
 ;;   "Calculate the actual char height of the mode-line."
@@ -109,5 +109,27 @@
 ;;     (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
 ;;     )
 ;;   :hook (after-init . doom-modeline-mode))
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :config
+;;   (progn
+;;     (setq doom-modeline-buffer-file-name-style 'relative-from-project
+;;           doom-modeline-height 8)
+;;     (setq evil-normal-state-tag   (propertize "[Normal]" 'face '((:background "green" :foreground "black")))
+;;           evil-emacs-state-tag    (propertize "[Emacs]" 'face '((:background "orange" :foreground "black")))
+;;           evil-insert-state-tag   (propertize "[Insert]" 'face '((:background "red") :foreground "white"))
+;;           evil-motion-state-tag   (propertize "[Motion]" 'face '((:background "blue") :foreground "white"))
+;;           evil-visual-state-tag   (propertize "[Visual]" 'face '((:background "grey80" :foreground "black")))
+;;           evil-operator-state-tag (propertize "[Operator]" 'face '((:background "purple"))))
+;;     (setq doom-one-brighter-modeline t)
+;;     (doom-modeline-init)
+;;     )
+;;   :hook (after-init . doom-modeline-mode))
 
+(setq frame-title-format
+      '((:eval (if (buffer-file-name)
+                   (abbreviate-file-name (buffer-file-name))
+                 "%b"))))
+(require 'telephone-line)
+(telephone-line-mode 1)
 (provide 'init-ui)

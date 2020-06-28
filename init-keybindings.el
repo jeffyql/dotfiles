@@ -25,6 +25,7 @@
                 (local-set-key   "d" 'my/dired-up-directory)
                 (local-unset-key "e")
                 (local-unset-key "f")
+                (local-unset-key "g")
                 (local-unset-key "h")
                 (local-set-key   "i" 'wdired-change-to-wdired-mode)
                 (define-key evil-normal-state-local-map   "j" 'dired-next-line)
@@ -129,7 +130,7 @@
   "g"    'grep
   "h"    'hydra-help/body
   "i"    'counsel-imenu
-  "j"    'my/recentf-main-language-by-project
+  "j"    'my/recentf-by-project
   "l"    'my/counsel-rg
   "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper

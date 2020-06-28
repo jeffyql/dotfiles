@@ -27,7 +27,7 @@
       (setq project-root 
             (catch 'done
               (cl-loop for f in recentf-list do
-                       (when (string-match-p filter f)
+                       (when (funcall filter f)
                          (setq root (projectile-project-root (file-name-directory f)))
                          (if root (throw 'done root)))))))
     (unless project-root
@@ -43,10 +43,13 @@
     (if next-file (setq list (delete next-file list)))
     list))
   
-(defun my/recentf-main-language-by-project (&optional arg)
+(defun my/recentf-project-filter (f)
+  t)
+
+(defun my/recentf-by-project (&optional arg)
   (interactive "P")
-  (let* ((project-root (my/get-recentf-project my-main-language-filter arg))
-         (list (cl-remove-if-not (lambda (f) (and (string-match my-main-language-filter f)
+  (let* ((project-root (my/get-recentf-project 'my/recentf-project-filter arg))
+         (list (cl-remove-if-not (lambda (f) (and (funcall 'my/recentf-project-filter f)
                                                   (string-prefix-p project-root f)))
                                  recentf-list))
          (list (my/get-not-displayed-from-file-list list)) 

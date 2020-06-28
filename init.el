@@ -1,6 +1,13 @@
 (require 'package)
 ;(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+(package-initialize)
+
+(add-to-list 'load-path "~/mib/scripts/emacs")
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
 (require 'init-keybindings)
 (require 'init-core)

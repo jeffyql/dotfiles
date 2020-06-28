@@ -49,7 +49,8 @@
   "$"   'org-insert-prompt
   )
 
-(my-mf-def '(normal motion visual) 'override
+(my-mf-def
+  :keymaps '(normal motion visual)
   "c"   'org-roam-db-build-cache
   "d"   'org-roam
   "f"   'org-roam-find-file

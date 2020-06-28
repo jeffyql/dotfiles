@@ -48,7 +48,7 @@
   "ui"      'my/vterm-insert
   "ut"      'compilation-shell-minor-mode
   "uu"      'vterm-undo
-  "u ESC"  'my/vterm-send-escape
+  "u ESC"  'vterm-send-escape
   "ux"      'vterm-clear
   "u."      'vterm-send-meta-dot
   "w"       'vterm-send-M-f
@@ -58,10 +58,10 @@
   "<up>"    'vterm-send-up
   "DEL"     'my/vterm-scroll-up
   "<backspace>"  'my/vterm-scroll-up
-  "RET"     'vterm-send-return
-  "<return>" 'vterm-send-return
+  "<return>" 'my/vterm-send-return
   "SPC"     'vterm-send-space
   "<xterm-paste>"  'my/xterm-paste
+  "<escape>"    'my/vterm-quit
   "M-i"     'evil-emacs-state
   )
 
@@ -72,6 +72,7 @@
   "M-k"    'vterm-send-up
   "M-p"    'my/vterm-paste-current-kill
   "<escape>"    'my/vterm-send-escape
+  "<return>" 'my/vterm-send-return
   )
 
 (general-def 'insert 'vterm-mode-map
@@ -102,7 +103,7 @@
  "DEL"     'my/evil-scroll-up
  "SPC"     'my/evil-scroll-down
  "RET"     'vterm-copy-mode-done
- "<escape>"    'my/vterm-cancel-copy-mode
+ "<escape>"    'my/vterm-cancel
  )
 
 (general-define-key
@@ -115,7 +116,7 @@
  "u"  'er/contract-region
  "v"  'er/expand-region
  "RET"     'vterm-copy-mode-done
- "<escape>"    'my/vterm-cancel-copy-mode
+ "<escape>"    'my/vterm-cancel
  )
 
 (defun my/vterm-paste-current-kill ()
@@ -221,13 +222,18 @@
           ))))
 
 
-(defun my/vterm-cancel-copy-mode ()
+(defun my/vterm-cancel ()
   (interactive)
   (if (region-active-p)
       (deactivate-mark t))
   (if vterm-copy-mode
       (vterm-copy-mode -1)
     (vterm-reset-cursor-point)))
+
+(defun my/vterm-quit ()
+  (interactive)
+  (my/vterm-cancel)
+  (my/keyboard-quit))
 
 (defvar my-vterm-selected-buffer nil)
 ;; (add-to-list 'vterm-keymap-exceptions "C-l")
@@ -246,7 +252,7 @@
 
 (defun my/vterm-insert ()
   (interactive)
-  (my/vterm-cancel-copy-mode)
+  (my/vterm-cancel)
   (evil-insert-state 1))
   ;; (call-interactively 'evil-insert))
 
@@ -271,6 +277,17 @@
   (vterm-send-key "k" nil nil t)
   )
 
+(defun my/vterm-send-return (&optional arg)
+  (interactive "P")
+  (if arg
+      (my/vterm-save-command))
+  (vterm-send-return))
+
+(defun my/vterm-send-escape ()
+    (interactive)
+    (vterm-send-key "<escape>")
+    )
+
 (defun my/vterm-send-n ()
   (interactive)
   (vterm-send-key "n"))
@@ -289,12 +306,6 @@
   (interactive)
   (vterm-send-C-r)
   (my/vterm-insert-state 'vterm-send-C-r))
-
-(defun my/vterm-send-escape ()
-  (interactive)
-  (when vterm--term
-    (vterm-send-key "<escape>")
-    ))
 
 (defun my/vterm-select-buffer ()
   (interactive)
@@ -343,18 +354,23 @@
     (vterm-send-string (concat "cd" " " dir))
     (vterm-send-return)))
 
-(defun my/vterm-save-current-command ()
-  (interactive)
-  (let (beg end cmd)
+(defun my/vterm-save-command ()
+  (let (beg end)
     (vterm-reset-cursor-point)
-    (vterm-send-C-a)
-    (sleep-for 0.1)
-    (setq beg (vterm--get-cursor-point))
-    (vterm-send-C-e)
-    (sleep-for 0.1)
-    (setq end (vterm--get-cursor-point))
-    (setq cmd (buffer-substring-no-properties beg end))
-    (message "saved command: %s" cmd)
-    (kill-new cmd)))
+    (save-excursion
+      (end-of-line)
+      (while (get-text-property (point) 'vterm-line-wrap)
+        (forward-char)
+        (end-of-line))
+      (setq end (point))
+      (beginning-of-line)
+      (while (and (not (bobp))
+                  (get-text-property (1- (point)) 'vterm-line-wrap))
+        (forward-char -1)
+        (beginning-of-line))
+      (if (looking-at ".*[$#] ")
+          (goto-char (match-end 0)))
+      (setq beg (point)))
+    (kill-new (replace-regexp-in-string "\n" "" (buffer-substring-no-properties beg end)))))
 
 (provide 'init-vterm)
