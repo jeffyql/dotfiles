@@ -67,69 +67,59 @@
                    (abbreviate-file-name (buffer-file-name))
                  "%b"))))
 
-;; (use-package doom-modeline
-;;   :ensure t
-;;   :init
-;;   (setq doom-modeline-unicode-fallback nil)
-;;   (setq doom-modeline-modal-icon t)
-;;   :custom-face
-;;   ;; (mode-line ((t (:height 1.0))))
-;;   ;; (mode-line-inactive ((t (:height 1.0))))
-;;   :config
-;;   (progn
-;;     (setq doom-modeline-buffer-file-name-style 'relative-from-project
-;;           doom-one-brighter-modeline t)
-;;     (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
-;;     (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
-;;     (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
-;;     (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
-;;     (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
-;;     (set-face-foreground 'doom-modeline-evil-visual-state "gray")
-;;     (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
-;;     (doom-modeline-init)
-;;     )
-;;   :hook (after-init . doom-modeline-mode))
+(use-package doom-modeline
 
-;; (defun my-doom-modeline--font-height ()
-;;   "Calculate the actual char height of the mode-line."
-;;   (+ (frame-char-height) 2))
-;; (advice-add #'doom-modeline--font-height :override #'my-doom-modeline--font-height)
-
-;; (use-package doom-modeline
-;;   :ensure t
-;;   :config
-;;   (progn
-;;     (setq doom-modeline-buffer-file-name-style 'file-name)
-;;     (set-face-foreground 'doom-modeline-evil-emacs-state "SkyBlue2")
-;;     (set-face-foreground 'doom-modeline-evil-insert-state "chartreuse3")
-;;     (set-face-foreground 'doom-modeline-evil-motion-state "plum3")
-;;     (set-face-foreground 'doom-modeline-evil-normal-state "DarkGoldenrod2")
-;;     (set-face-foreground 'doom-modeline-evil-operator-state "DarkGoldenrod2")
-;;     (set-face-foreground 'doom-modeline-evil-visual-state "gray")
-;;     (set-face-foreground 'doom-modeline-evil-replace-state "chocolate")
-;;     )
-;;   :hook (after-init . doom-modeline-mode))
-;; (use-package doom-modeline
-;;   :ensure t
-;;   :config
-;;   (progn
-;;     (setq doom-modeline-buffer-file-name-style 'relative-from-project
-;;           doom-modeline-height 8)
-;;     (setq evil-normal-state-tag   (propertize "[Normal]" 'face '((:background "green" :foreground "black")))
-;;           evil-emacs-state-tag    (propertize "[Emacs]" 'face '((:background "orange" :foreground "black")))
-;;           evil-insert-state-tag   (propertize "[Insert]" 'face '((:background "red") :foreground "white"))
-;;           evil-motion-state-tag   (propertize "[Motion]" 'face '((:background "blue") :foreground "white"))
-;;           evil-visual-state-tag   (propertize "[Visual]" 'face '((:background "grey80" :foreground "black")))
-;;           evil-operator-state-tag (propertize "[Operator]" 'face '((:background "purple"))))
-;;     (setq doom-one-brighter-modeline t)
-;;     (doom-modeline-init)
-;;     )
-;;   :hook (after-init . doom-modeline-mode))
+      :config
+      (progn
+        (setq doom-modeline-buffer-file-name-style 'relative-from-project
+              doom-modeline-height 8)
+        (setq doom-one-brighter-modeline t)
+        (doom-modeline-init)
+        (remove-hook 'after-change-functions #'doom-modeline-update-buffer-file-name-face)
+        (add-function :after after-focus-change-function #'my/doom-modeline-update-face)
+        (add-hook 'after-change-functions #'my/doom-modeline-normal-state-after-change-set-face)
+        (add-hook 'evil-insert-state-entry-hook #'my/doom-modeline-insert-state-update-face)
+        ;;(add-hook 'after-change-major-mode-hook #'my/doom-modeline-update-face)
+        )
+      :hook (after-init . doom-modeline-mode))
 
 (setq frame-title-format
       '((:eval (if (buffer-file-name)
                    (abbreviate-file-name (buffer-file-name))
                  "%b"))))
-(require 'telephone-line)
-(telephone-line-mode 1)
+
+(defun my/doom-modeline-update-face ()
+  (if (frame-focus-state)
+      (setq doom-modeline--buffer-file-name
+            (cond
+             ((evil-insert-state-p)
+              (propertize doom-modeline--buffer-file-name
+                          'face 'widget-single-line-field))
+             ((and (equal major-mode 'vterm-mode) vterm-copy-mode)
+              (propertize doom-modeline--buffer-file-name
+                          'face 'doom-modeline-debug-visual))
+             ((and (buffer-modified-p) (not (equal major-mode 'vterm-mode)))
+              (propertize doom-modeline--buffer-file-name
+                          'face 'doom-modeline-buffer-modified))
+             (t
+              (propertize "%b"
+                          'face 'doom-modeline-buffer-file
+                          'mouse-face 'mode-line-highlight
+                          'help-echo "Buffer name mouse-1: Previous buffer\nmouse-3: Next buffer"
+                          'local-map mode-line-buffer-identification-keymap))))))
+
+(defun my/doom-modeline-insert-state-update-face ()
+  (setq doom-modeline--buffer-file-name
+        (propertize doom-modeline--buffer-file-name
+                    'face 'widget-single-line-field)))
+
+(defun my/doom-modeline-normal-state-after-change-set-face (&rest _)
+  (when (and (evil-normal-state-p)
+             (not (equal major-mode 'vterm-mode))
+             doom-modeline--buffer-file-name
+             (buffer-modified-p))
+    (setq doom-modeline--buffer-file-name
+          (propertize doom-modeline--buffer-file-name
+                      'face 'doom-modeline-buffer-modified))))
+
 (provide 'init-ui)

@@ -126,10 +126,4 @@
       (open-line arg)
       (indent-according-to-mode))
 
-(defun my/open-next-line (&optional arg)
-  (interactive "P")
-  (if arg
-      (open-previous-line 1)
-    (open-next-line 1)))
-
 (provide 'init-snippets)

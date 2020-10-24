@@ -28,7 +28,7 @@
   "dga"     'vterm-send-C-u
   "dge"     'vterm-send-C-k
   "dw"      'vterm-send-M-d
-  "e"       'my/vterm-yank-command-snippet
+  "e"       'my/yank-command-snippet
   "h"       'vterm-send-C-b
   "i"       'my/vterm-insert
   "I"       'my/vterm-insert-line
@@ -36,8 +36,8 @@
   "k"       'vterm-send-up
   "l"       'vterm-send-C-f
   "n"       'my/vterm-send-key
-  "o"       (lambda () (interactive) (vterm-copy-mode 1))
-  "p"       'vterm-yank
+  "o"       (lambda () (interactive) (vterm-copy-mode 1) (message "vterm copy mode on"))
+  "p"       'my/vterm-yank
   "q"       'my/vterm-send-key
   "r"       'my/vterm-send-C-r
   "u"       nil
@@ -48,20 +48,21 @@
   "ui"      'my/vterm-insert
   "ut"      'compilation-shell-minor-mode
   "uu"      'vterm-undo
-  "u ESC"  'vterm-send-escape
   "ux"      'vterm-clear
   "u."      'vterm-send-meta-dot
   "w"       'vterm-send-M-f
   "x"       'vterm-send-C-d
+  "y"       'my/vterm-send-key
   "\\"      'my/vterm-send-slash-key
   "<down>"  'vterm-send-down
   "<up>"    'vterm-send-up
   "DEL"     'my/vterm-scroll-up
   "<backspace>"  'my/vterm-scroll-up
+  "RET" 'my/vterm-send-return
   "<return>" 'my/vterm-send-return
-  "SPC"     'vterm-send-space
   "<xterm-paste>"  'my/xterm-paste
   "<escape>"    'my/vterm-quit
+  "SPC"       (lambda () (interactive) (vterm-copy-mode 1))
   "M-i"     'evil-emacs-state
   )
 
@@ -73,6 +74,7 @@
   "M-p"    'my/vterm-paste-current-kill
   "<escape>"    'my/vterm-send-escape
   "<return>" 'my/vterm-send-return
+  "RET" 'my/vterm-send-return
   )
 
 (general-def 'insert 'vterm-mode-map
@@ -81,6 +83,8 @@
   "M-j"    'vterm-send-down
   "M-k"    'vterm-send-up
   "M-p"    'my/vterm-paste-current-kill
+  "<return>" 'my/vterm-send-return
+  "RET" 'my/vterm-send-return
   )
 
 (general-define-key
@@ -100,8 +104,8 @@
  "v"       'evil-visual-char
  "w"       'evil-forward-word-begin
  "x"       'vterm-copy-mode-ignore
- "DEL"     'my/evil-scroll-up
- "SPC"     'my/evil-scroll-down
+ "DEL"     'my/vterm-scroll-up
+ "SPC"     'my/vterm-scroll-down
  "RET"     'vterm-copy-mode-done
  "<escape>"    'my/vterm-cancel
  )
@@ -146,7 +150,7 @@
 
 (add-to-list 'my-saved-lists-alist (cons 'my-command-snippets my-command-snippets-file))
 
-(defun my/vterm-yank-command-snippet ()
+(defun my/yank-command-snippet ()
   (interactive)
   (let ((selected (my/saved-lists-select 'my-command-snippets)))
     (if (eq major-mode 'vterm-mode)
@@ -157,10 +161,25 @@
   (interactive "P")
   (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
 
+(defun my/vterm-yank (&optional arg)
+   (interactive "P")
+   (if arg
+       (counsel-yank-pop)
+     (vterm-yank)))
+
 (defun my/vterm-send-key ()
   (interactive)
   (let ((base (event-basic-type last-input-event)))
     (vterm-send-key (char-to-string base))))
+
+(defun my/vterm-scroll-down ()
+  (interactive)
+  (unless vterm-copy-mode
+    (vterm-copy-mode 1))
+  (if (< (window-end) (vterm--get-cursor-point))
+      (evil-scroll-down 0)
+    (if (> (window-end) (vterm--get-cursor-point))
+        (vterm-reset-cursor-point))))
 
 (defun my/vterm-scroll-up ()
   (interactive)
@@ -281,6 +300,8 @@
   (interactive "P")
   (if arg
       (my/vterm-save-command))
+  (unless (eq evil-state 'normal)
+    (evil-normal-state))
   (vterm-send-return))
 
 (defun my/vterm-send-escape ()

@@ -8,18 +8,20 @@
   (projectile-generic-command "fd . -0")
   (projectile-git-command "fd . -0")
   )
-
-(defun my/recentf-by-type (filter &optional include)
-  (let* ((list (if include
-                    (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)
-                  (cl-remove-if  (lambda (x) (string-match filter x)) list)))
-         (list (if (equal (buffer-file-name) (car list))
-                   (cdr list) list)))
-    (ivy-read "Select file: " list
-              :action (lambda (f)
-                        (with-ivy-window
-                          (find-file f)))
-              :caller 'counsel-recentf)))
+ (defun my/recentf-by-type (filter &optional exclude)
+   (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
+          list)
+     (setq list (if exclude
+                    (cl-remove-if  (lambda (x) (string-match filter x)) recentf-list)
+                  (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)))
+     (if next-buf
+         (setq list (delete (buffer-file-name next-buf) list)))
+     (setq list (delete buffer-file-name list))
+     (ivy-read "Select file: " list
+               :action (lambda (f)
+                         (with-ivy-window
+                           (find-file f)))
+               :caller 'counsel-recentf)))
 
 (defun my/get-recentf-project (filter &optional arg)
   (let (project-root root)

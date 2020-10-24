@@ -123,7 +123,6 @@
 (my-f-def
   :keymaps 'normal
   "ESC"  'keyboard-quit
-  "a"    'my/recentf-misc
   "d"    'dired
   "e"    'my/recentf-el
   "f"    'counsel-find-file
@@ -136,7 +135,7 @@
   "m"    'counsel-grep-or-swiper
   "n"    'my/swiper-symbol
   "p"    'my/projectile-find-file
-  "r"    'my/counsel-rg-org-search
+  "r"    'my/recentf-misc
   "s"    'ivy-switch-buffer
   "t"    'my/ripgrep-this-file
   "u"    'counsel-bookmark
@@ -207,8 +206,7 @@
   "n"    'my/evil-ex-search-word-forward
   "o"    'occur
   "q"    'my/delete-or-split-window
-  "r"    'my/open-next-line
-  "s"    'my/occur-at-point
+  "r"    'my/open-line
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "w"    'my/swap-window
@@ -224,7 +222,7 @@
   "X"    'shell-command
   ","    'my/org-store-link-to-current-line
   "ESC"  'keyboard-quit
-  "SPC"  'show-terminal
+  "SPC"  'my/insert-space
   "U"    'kmacro-start-macro
   "1"    'test
   "1"    'vterm-by-number
@@ -260,11 +258,12 @@
 ;; global misc commands
 (my-mv-def
   :keymaps '(normal motion visual)
-  "b"   'my/buffer-to-file-or-new-buffer
-  "f"   'magit-find-file
+  "b"   'my/capture-by-buffer
+  "f"   'my/capture-by-file
   "g"   'my/magit-status
   "h"   'highlight-symbol-at-point-all-windows
   "k"   'my/current-kill-to-file-or-new-buffer
+  "m"   'magit-find-file
   "p"   'my/add-or-remove-command-snippet
   "s"  (lambda () (interactive) (let ((current-prefix-arg t)) (call-interactively 'deadgrep)))
   "t"   'tab-new

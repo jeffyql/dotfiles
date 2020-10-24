@@ -47,14 +47,15 @@
   "-"   'org-ctrl-c-minus
   "g"   'org-agenda-file-to-front
   "$"   'org-insert-prompt
+  ","   'org-insert-structure-template
   )
 
 (my-mf-def
   :keymaps '(normal motion visual)
   "c"   'org-roam-db-build-cache
   "d"   'org-roam
-  "f"   'org-roam-find-file
-  "i"   'org-roam-insert
+  "f"   'org-roam-find-file-immediate
+  "i"   'org-roam-insert-immediate
   "s"   'my/org-store-link-to-current-line
   "t"   'my/org-roam-new-tab
   )

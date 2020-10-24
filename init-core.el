@@ -406,6 +406,20 @@ has been displayed in this session."
      ((windmove-find-other-window 'down)
       (enlarge-window 2)))))
 
+;;; edit
+
+(defun my/insert-space ()
+   (interactive)
+   (if (equal major-mode 'vterm-mode)
+       (vterm-send-space)
+     (insert "\s")))
+
+(defun my/open-line (&optional arg)
+  (interactive "P")
+  (if arg
+      (open-previous-line 1)
+    (open-next-line 1)))
+
 ;;; ivy
 ;;; misc
 
