@@ -1,3 +1,7 @@
+;; recent files 1) by type (el org), 2) by project (using whatever criterion), or 3) a single group of all other files
+
+(defvar my-project-hint-files-filter "\\.h$\\|\\.c$\\|\\.cpp$\\|\\.hpp$")
+
 (use-package projectile
   :ensure t
   :config
@@ -8,53 +12,44 @@
   (projectile-generic-command "fd . -0")
   (projectile-git-command "fd . -0")
   )
- (defun my/recentf-by-type (filter &optional exclude)
-   (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
-          list)
-     (setq list (if exclude
-                    (cl-remove-if  (lambda (x) (string-match filter x)) recentf-list)
-                  (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)))
-     (if next-buf
-         (setq list (delete (buffer-file-name next-buf) list)))
-     (setq list (delete buffer-file-name list))
-     (ivy-read "Select file: " list
-               :action (lambda (f)
-                         (with-ivy-window
-                           (find-file f)))
-               :caller 'counsel-recentf)))
+(defun my/recentf-by-type (filter &optional exclude)
+  (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
+         list)
+    (setq list (if exclude
+                   (cl-remove-if  (lambda (x) (string-match filter x)) recentf-list)
+                 (cl-remove-if-not  (lambda (x) (string-match filter x)) recentf-list)))
+    (if next-buf
+        (setq list (delete (buffer-file-name next-buf) list)))
+    (setq list (delete buffer-file-name list))
+    (ivy-read "Select file: " list
+              :action (lambda (f)
+                        (with-ivy-window
+                          (find-file f)))
+              :caller 'counsel-recentf)))
 
-(defun my/get-recentf-project (filter &optional arg)
-  (let (project-root root)
-    (unless arg
-      (setq project-root 
-            (catch 'done
-              (cl-loop for f in recentf-list do
-                       (when (funcall filter f)
-                         (setq root (projectile-project-root (file-name-directory f)))
-                         (if root (throw 'done root)))))))
+(defun my/get-project-by-recentf (&optional switch-project)
+  (let (project-root first root)
+    (unless switch-project
+      (setq first (cl-find-if (lambda (f) (string-match-p my-project-hint-files-filter f)) recentf-list)
+            project-root (if first (projectile-project-root (file-name-directory first)))))
     (unless project-root
-      (setq project-root 
+      (setq project-root
             (projectile-project-root (projectile-completing-read
                                       "Switch to project: " projectile-known-projects))))
     project-root))
 
-(defun my/get-not-displayed-from-file-list (list)
+(defun my/remove-displayed-files (list)
   (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
          (next-file (if next-buf (buffer-file-name next-buf))))
     (if buffer-file-name (setq list (delete buffer-file-name list)))
     (if next-file (setq list (delete next-file list)))
     list))
-  
-(defun my/recentf-project-filter (f)
-  t)
 
-(defun my/recentf-by-project (&optional arg)
+(defun my/recentf-by-project (&optional switch-project)
   (interactive "P")
-  (let* ((project-root (my/get-recentf-project 'my/recentf-project-filter arg))
-         (list (cl-remove-if-not (lambda (f) (and (funcall 'my/recentf-project-filter f)
-                                                  (string-prefix-p project-root f)))
-                                 recentf-list))
-         (list (my/get-not-displayed-from-file-list list)) 
+  (let* ((project-root (my/get-project-by-recentf switch-project))
+         (list (cl-remove-if-not (lambda (f) (string-match-p my-project-hint-files-filter f)) recentf-list))
+         (list (my/remove-displayed-files list))
          project-root-name prompt)
     (setq list (mapcar (lambda (f) (file-relative-name f project-root)) list)
           project-root-name (file-name-nondirectory (directory-file-name project-root))
@@ -65,10 +60,10 @@
                            (find-file (expand-file-name f project-root))))
                :caller 'counsel-recentf)))
 
- (defun my/recentf-el ()
-   (interactive)
-   (my/recentf-by-type "\\.el$\\|\\.el.gz$" t))
- 
+(defun my/recentf-el ()
+  (interactive)
+  (my/recentf-by-type "\\.el$\\|\\.el.gz$"))
+
 (defun my/recentf-org ()
   (interactive)
   (let* ((list (cl-remove-if-not  (lambda (x) (string-match "\\.org$" x)) recentf-list))
@@ -79,14 +74,14 @@
               :action (lambda (f)
                         (with-ivy-window
                           (find-file (cdr (assoc f alist)))))
-                          ;; (message (cdr (assoc f alist)))))
+              ;; (message (cdr (assoc f alist)))))
               :caller 'my/recentf-org)))
+(defun my/recentf-misc ()
+  (interactive)
+  (my/recentf-by-type (concat my-project-hint-files-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz$") t))
 
- (defun my/recentf-misc (&optional arg)
-   (interactive "P")
-   (my/recentf-by-type (concat my-main-language-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz") nil arg))
 
- (defun my/last-file-by-type (filter &optional negate)
+(defun my/last-file-by-type (filter)
   (let ((next-buf (unless (one-window-p) (window-buffer (next-window))))
         (list recentf-list))
     (if next-buf
@@ -97,19 +92,19 @@
     (when buffer-file-name
       (setq list (cdr list)))
     (catch 'done
-      (cl-loop for file in list do
-               (if negate
-                   (unless (string-match-p filter file)
-                     (throw 'done file))
-                 (if (string-match-p filter file)
-                        (throw 'done file)))))))
+      (cl-loop for f in list do
+               (if (stringp filter)
+                   (if (string-match-p filter f)
+                       (throw 'done f))
+                 (if (funcall filter f)
+                     (throw 'done f)))))))
 
 (defun my/open-last-file-by-type (filter)
   (let ((file (my/last-file-by-type filter)))
     (when (and file (file-exists-p file))
       (find-file file))))
 
-(defun my/last-file-by-type-and-project (filter project)
+(defun my/last-file-by-project (filter project)
   (let (file buf)
     (catch 'done
       (cl-loop for file in recentf-list do
@@ -119,73 +114,61 @@
                         (string-prefix-p project file))
                    (throw 'done file))))))
 
-(defun my/open-last-file-by-type-and-project (filter project)
-  (let ((file (my/last-file-by-type-and-project filter project)))
+(defun my/open-last-file-and-project (filter project)
+  (let ((file (my/last-file-by-project filter project)))
     (when (and file (file-exists-p file))
       (find-file file))))
 
-(defun my/open-last-main-language-file (&optional arg)
+(defun my/open-last-main-language-file (&optional switch-project)
   (interactive "P")
-  (let ((project (my/get-recentf-project my-main-language-filter arg)))
-    (my/open-last-file-by-type-and-project
-     my-main-language-filter
+  (let ((project (my/get-project-by-recentf switch-project)))
+    (my/open-last-file-by-project
+     my-project-hint-files-filter
      project)))
+
+(defun my/open-last-org-file (&optional arg)
+  (interactive "P")
+  (if arg
+    (dired my-org-dir)
+    (let ((file (my/last-file-by-type "\\.org$")))
+      (find-file file))))
 
 (defun my/last-log-file ()
   (interactive)
   (let (file)
     (setq file (my/last-file-by-type "capture[0-9]+\\|\\.log$"))
     (if (file-exists-p file)
-        (find-file file) 
+        (find-file file)
       (message "no log file found"))))
 
-
-(defun my/open-last-file-by-type-and-project (filter project)
-  (let ((file (my/last-file-by-type-and-project filter project)))
-    (when (and file (file-exists-p file))
-      (find-file file))))
-
-(defun my/open-last-org-file ()
+(defun my/open-last-misc-file ()
   (interactive)
-  (let ((file (my/last-file-by-type "\\.org$")))
+  (let ((file (my/last-file-by-type (lambda (f) (not (string-match-p (concat my-project-hint-files-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz$") f))))))
     (if (file-exists-p file)
         (find-file file))))
-
- (defun my/projectile-find-file ()
-   (interactive "P")
-   (let ((default-directory (projectile-completing-read
-                             "Switch to project: " projectile-known-projects)
-                               ))
-     (projectile-find-file)))
-
- (defun my/projectile-dired ()
-   (interactive)
-   (let ((default-directory (projectile-completing-read
-                             "Switch to project: " projectile-known-projects)))
-     (projectile-dired)))
 
 (defun my/ffap ()
   (interactive)
   (let (msg loc filename dir line))
-    (if (or (symbol-value 'compilation-minor-mode)
-            (eq major-mode 'compilation-mode))
-        (setq msg (get-text-property (point) 'compilation-message)
-              loc (and msg (compilation--message->loc msg))
-              filename (caar (compilation--loc->file-struct loc))
-              filename (file-name-nondirectory filename)
-              line (cadr loc))
-      (setq filename (ffap-string-at-point))
-      (save-excursion
-        (beginning-of-line 2)
-        (if (looking-at "\\([0-9]+\\):")
+  (if (or (symbol-value 'compilation-minor-mode)
+          (eq major-mode 'compilation-mode))
+      (setq msg (get-text-property (point) 'compilation-message)
+            loc (and msg (compilation--message->loc msg))
+            filename (caar (compilation--loc->file-struct loc))
+            filename (file-name-nondirectory filename)
+            line (cadr loc))
+    (setq filename (ffap-string-at-point))
+    (save-excursion
+      (beginning-of-line 2)
+      (if (looking-at "\\([0-9]+\\):")
           (setq line (string-to-number (match-string 1))))))
-    (setq dir (ivy-dired-history--read-file-name "directory: ")
-          filename (concat dir filename))
-    (if (not (file-exists-p filename))
-        (message "%s doesn't exist" filename)
-      (ivy-dired-history--update dir)
-      (find-file filename)
-      (if line
-          (goto-line line))))
+  (setq dir (ivy-dired-history--read-file-name "directory: ")
+        filename (concat dir filename))
+  (if (not (file-exists-p filename))
+      (message "%s doesn't exist" filename)
+    (ivy-dired-history--update dir)
+    (find-file filename)
+    (if line
+        (goto-line line))))
 
 (provide 'init-recentf)

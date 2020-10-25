@@ -17,6 +17,9 @@
           '("M-:" "C-c" "C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-y" "M-y"))
     ))
 
+(add-hook 'vterm-mode-hook #'my/vterm-init-hook)
+(add-hook 'vterm-copy-mode-hook #'my/doom-modeline-update-face)
+
 (general-def '(normal motion visual) 'vterm-mode-map
   "a"       'my/vterm-append
   "A"       'my/vterm-append-line
@@ -36,7 +39,6 @@
   "k"       'vterm-send-up
   "l"       'vterm-send-C-f
   "n"       'my/vterm-send-key
-  "o"       (lambda () (interactive) (vterm-copy-mode 1) (message "vterm copy mode on"))
   "p"       'my/vterm-yank
   "q"       'my/vterm-send-key
   "r"       'my/vterm-send-C-r
@@ -104,9 +106,10 @@
  "v"       'evil-visual-char
  "w"       'evil-forward-word-begin
  "x"       'vterm-copy-mode-ignore
- "DEL"     'my/vterm-scroll-up
+ "DEL"     'vterm-scroll-up
  "SPC"     'my/vterm-scroll-down
  "RET"     'vterm-copy-mode-done
+ "<return>"     'vterm-copy-mode-done
  "<escape>"    'my/vterm-cancel
  )
 
@@ -120,6 +123,7 @@
  "u"  'er/contract-region
  "v"  'er/expand-region
  "RET"     'vterm-copy-mode-done
+ "<return>"     'vterm-copy-mode-done
  "<escape>"    'my/vterm-cancel
  )
 
@@ -162,10 +166,10 @@
   (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
 
 (defun my/vterm-yank (&optional arg)
-   (interactive "P")
-   (if arg
-       (counsel-yank-pop)
-     (vterm-yank)))
+  (interactive "P")
+  (if arg
+      (counsel-yank-pop)
+    (vterm-yank)))
 
 (defun my/vterm-send-key ()
   (interactive)
@@ -183,7 +187,8 @@
 
 (defun my/vterm-scroll-up ()
   (interactive)
-  (vterm-copy-mode 1)
+  (unless vterm-copy-mode
+    (vterm-copy-mode 1))
   (evil-scroll-up 0))
 
 (defun my/vterm-send-slash-key ()
@@ -215,7 +220,7 @@
               base (event-basic-type event))
         (if (not modifier)
             (cond
-             ((eq base 'return) (message "done") (evil-emacs-state) (throw :exit nil))
+             ((eq base 'return) (message "done") (throw :exit nil))
              ((eq base 'backspace) (vterm-send-backspace))
              ((eq base 'tab)
               (if tab-func (funcall tab-func) (vterm-send-tab)))
@@ -234,12 +239,11 @@
              ((= base ?\[) (vterm-send-C-f) (sit-for 0.1) (throw :exit nil))
              ((= base ?i)
               (if tab-func (funcall tab-func) (vterm-send-tab)))
-             ((= base ?m) (message "done") (evil-emacs-state) (throw :exit nil))
+             ((= base ?m) (message "done") (throw :exit nil))
              (t nil)))
            (t nil)))
         (message "======insert=======insert======insert======")
           ))))
-
 
 (defun my/vterm-cancel ()
   (interactive)
@@ -247,7 +251,8 @@
       (deactivate-mark t))
   (if vterm-copy-mode
       (vterm-copy-mode -1)
-    (vterm-reset-cursor-point)))
+    (vterm-reset-cursor-point)
+    (my/doom-modeline-update-face)))
 
 (defun my/vterm-quit ()
   (interactive)
@@ -273,7 +278,6 @@
   (interactive)
   (my/vterm-cancel)
   (evil-insert-state 1))
-  ;; (call-interactively 'evil-insert))
 
 (defun my/vterm-insert-line ()
   (interactive)
@@ -300,8 +304,6 @@
   (interactive "P")
   (if arg
       (my/vterm-save-command))
-  (unless (eq evil-state 'normal)
-    (evil-normal-state))
   (vterm-send-return))
 
 (defun my/vterm-send-escape ()
@@ -339,27 +341,17 @@
     (message "%s is choosen" my-vterm-selected-buffer)
   ))
 
-(defun get-create-vterm (buf-name)
-  (let ((default-directory "~")
-        (pop-up-windows nil)
-        (buffer (get-buffer buf-name)))
+(defun my/get-create-vterm (buf-name)
+  (let* ((default-directory "~")
+         (pop-up-windows nil)
+         (appendix (make-string (- 72 (length buf-name)) ?\s))
+         (buf-name (concat buf-name appendix))
+         (buffer (get-buffer buf-name)))
     (unless buffer
       (setq buffer (generate-new-buffer buf-name))
       (with-current-buffer buffer
         (vterm-mode)))
-    (if (or (one-window-p) (not (eq major-mode 'org-mode)))
-        (pop-to-buffer-same-window buffer)
-      (pop-to-buffer buffer t) 
-      )))
-
-(defun vterm-by-number ()
-  (interactive)
-  (let ((base (event-basic-type last-input-event)))
-    (unless (and (characterp base) (>= base ?0) (<= base ?9))
-      (error "not a digit"))
-    (get-create-vterm (concat "vterm-" (char-to-string base)))))
-
-(defvar known-vterms nil)
+    (pop-to-buffer-same-window buffer)))
 
 (defun goto-vterm ()
   (interactive)
@@ -393,5 +385,15 @@
           (goto-char (match-end 0)))
       (setq beg (point)))
     (kill-new (replace-regexp-in-string "\n" "" (buffer-substring-no-properties beg end)))))
+
+(defun my/check-compilation-error-start ()
+  (interactive)
+  (unless vterm-copy-mode
+    (vterm-copy-mode 1))
+  (unless (bound-and-true-p compilation-shell-minor-mode)
+    (compilation-shell-minor-mode 1))
+  (next-error-no-select)
+  (recenter)
+  )
 
 (provide 'init-vterm)

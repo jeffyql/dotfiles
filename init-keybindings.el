@@ -5,7 +5,7 @@
     (setq evil-search-module (quote evil-search)
           evil-symbol-word-search t)
                                         ; (setq evil-ex-search-persistent-highlight nil)
-    (setq evil-insert-state-cursor '((bar . 2) "chartreuse3")
+    (setq evil-insert-state-cursor '(box "chartreuse3")
           evil-normal-state-cursor '(box "DarkGoldenrod2")
           evil-emacs-state-cursor '(box "SkyBlue2"))
     (setq evil-shift-round nil
@@ -52,7 +52,6 @@
                 (local-unset-key (kbd "DEL"))
                 (local-unset-key (kbd "SPC"))
                 (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
-                ;; (define-key evil-normal-state-local-map  (kbd "<return>") 'dired-find-alternate-file)
                 (local-set-key   "x" 'dired-mark)
                 ))
 
@@ -71,12 +70,6 @@
     (if (evil-ex-hl-active-p 'evil-ex-search)
         (evil-ex-delete-hl 'evil-ex-search))
     (keyboard-quit))
-
-  (defun my/evil-insert ()
-    (interactive)
-    (if (memq major-mode evil-emacs-state-modes)
-        (evil-emacs-state 1)
-      (call-interactively 'evil-insert)))
 )
 
 (use-package general :ensure t)
@@ -90,24 +83,27 @@
   "q"   'my/kill-this-buffer
   "s"   'my/select-window
   "t"   'universal-argument
-  "DEL" 'my/evil-scroll-up
-  "SPC" 'my/evil-scroll-down
+  "("   'kmacro-start-macro
+  ")"   'kmacro-end-or-call-macro-repeat
+  "DEL" 'evil-scroll-up
+  "SPC" 'evil-scroll-down
   "TAB" nil
  )
 
 (general-def 'visual
- "a"  'mark-whole-buffer
- "i"  'evil-visual-line
- "o"  'evil-visual-block
- "r"  'evil-surround-region
- "u"  'er/contract-region
- "v"  'er/expand-region
+  "a"  'mark-whole-buffer
+  "i"  'evil-visual-line
+  "o"  'evil-visual-block
+  "r"  'evil-surround-region
+  "u"  'er/contract-region
+  "v"  'er/expand-region
  )
 
-(define-key universal-argument-map "t" 'universal-argument-more)
+(general-def universal-argument-map
+  "t" 'universal-argument-more
+  )
 
 (general-def
- "M-i" 'completion-at-point
  "M-." 'xref-find-definitions
  "M-?" 'xref-find-references
  "<s-right>" nil
@@ -116,10 +112,10 @@
  "<s-down>" nil
  )
 
-(evil-define-key nil evil-normal-state-map "f" nil)
 (general-create-definer my-f-def
   :prefix "f")
 
+(evil-define-key nil evil-normal-state-map "f" nil)
 (my-f-def
   :keymaps 'normal
   "ESC"  'keyboard-quit
@@ -128,12 +124,13 @@
   "f"    'counsel-find-file
   "g"    'grep
   "h"    'hydra-help/body
-  "i"    'counsel-imenu
+  "i"    'my/counsel-imenu
   "j"    'my/recentf-by-project
   "l"    'my/counsel-rg
   "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper
   "n"    'my/swiper-symbol
+  "o"    'my/recentf-org
   "p"    'my/projectile-find-file
   "r"    'my/recentf-misc
   "s"    'ivy-switch-buffer
@@ -141,7 +138,7 @@
   "u"    'counsel-bookmark
   "v"    'my/counsel-narrowed-indirect
   "w"    'tmux-select-active-window
-  "y"    'counsel-yank-pop
+  "y"    nil
   ","    'my/swiper-current-kill
   ";"    'my/counsel-rg-current-kill
   "."    'ivy-resume
@@ -166,7 +163,6 @@
   "f"    'firefox-to-front
   "g"    'evil-goto-first-line
   "h"    (lambda () (interactive) (dired "~"))
-  "i"    'my/goto-indirect-narrow-at-point
   "j"    'my/open-last-main-language-file
   "k"    'hydra-last-buffer-by-mode/body
   "l"    'evil-goto-line
@@ -174,6 +170,7 @@
   "n"    'select-vterm
   "o"    'my/open-last-org-file
   "p"    'my/projectile-dired
+  "r"    'my/open-last-misc-file
   "s"    '(lambda () (interactive) (switch-to-buffer "*scratch*"))
   "t"    (lambda () (interactive) (move-to-window-line 0))
   ";"    'goto-last-change

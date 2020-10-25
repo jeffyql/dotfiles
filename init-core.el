@@ -182,20 +182,6 @@ has been displayed in this session."
 
 ;;; navigation/search
 
-(defun my/evil-scroll-down (&optional arg)
-  (interactive "P")
-  (if arg
-      (evil-scroll-down 0)
-    (evil-scroll-page-down 1)
-  ))
-
-(defun my/evil-scroll-up (&optional arg)
-  (interactive "P")
-  (if arg
-      (evil-scroll-up 0)
-    (evil-scroll-page-up 1)
-  ))
-
 (defun my/evil-insert ()
   (interactive)
   (if (memq major-mode evil-emacs-state-modes)

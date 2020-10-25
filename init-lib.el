@@ -75,4 +75,9 @@
       (ivy-dired-history--update dir)
       (find-file file-name))))
 
+(defun my/counsel-imenu ()
+  (interactive)
+  (counsel-imenu)
+  (recenter 1))
+
 (provide 'init-lib)
