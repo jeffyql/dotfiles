@@ -1,10 +1,10 @@
-(setq my-command-snippets-file (concat my-mib-dir "command_snippets.txt")
-      my-command-snippets-max-size 2000)
+;; (setq my-command-snippets-file (concat my-mib-dir "command_snippets.txt")
+;;       my-command-snippets-max-size 2000)
 
-(if (file-exists-p my-command-snippets-file)
-    (load my-command-snippets-file)
-  (when (y-or-n-p "initialize command snippets? ")
-    (setq my-command-snippets nil)))
+;; (if (file-exists-p my-command-snippets-file)
+;;     (load my-command-snippets-file)
+;;   (when (y-or-n-p "initialize command snippets? ")
+;;     (setq my-command-snippets nil)))
 
 (use-package vterm
   :ensure t
@@ -152,18 +152,18 @@
 
 (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
 
-(add-to-list 'my-saved-lists-alist (cons 'my-command-snippets my-command-snippets-file))
+;; (add-to-list 'my-saved-lists-alist (cons 'my-command-snippets my-command-snippets-file))
 
-(defun my/yank-command-snippet ()
-  (interactive)
-  (let ((selected (my/saved-lists-select 'my-command-snippets)))
-    (if (eq major-mode 'vterm-mode)
-        (vterm-send-string selected)
-      (insert selected))))
+;; (defun my/yank-command-snippet ()
+;;   (interactive)
+;;   (let ((selected (my/saved-lists-select 'my-command-snippets)))
+;;     (if (eq major-mode 'vterm-mode)
+;;         (vterm-send-string selected)
+;;       (insert selected))))
 
-(defun my/add-or-remove-command-snippet (&optional remove)
-  (interactive "P")
-  (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
+;; (defun my/add-or-remove-command-snippet (&optional remove)
+;;   (interactive "P")
+;;   (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
 
 (defun my/vterm-yank (&optional arg)
   (interactive "P")

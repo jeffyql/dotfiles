@@ -9,18 +9,18 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
+(require 'init-local-info)
 (require 'init-keybindings)
 (require 'init-core)
 (require 'init-packages)
 (require 'init-recentf)
-
+(require 'init-vterm)
 
 (require 'init-capture)
 (require 'init-narrow)
 (require 'init-saved-lists)
 (require 'init-send-command)
 (require 'init-lib)
-(require 'init-local-info)
 (require 'init-elisp)
 
 (require 'init-ui)
@@ -33,7 +33,6 @@
 (require 'init-snippets)
 (require 'init-ide)
 (require 'init-terminal)
-(require 'init-vterm)
 
 (require 'init-prog)
 

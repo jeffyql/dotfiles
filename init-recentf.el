@@ -104,27 +104,22 @@
     (when (and file (file-exists-p file))
       (find-file file))))
 
-(defun my/last-file-by-project (filter project)
-  (let (file buf)
-    (catch 'done
-      (cl-loop for file in recentf-list do
-               (setq buf (get-file-buffer file))
-               (if (and (string-match-p filter file)
-                        (not (and buf (get-buffer-window buf)))
-                        (string-prefix-p project file))
-                   (throw 'done file))))))
-
-(defun my/open-last-file-and-project (filter project)
-  (let ((file (my/last-file-by-project filter project)))
+(defun my/open-last-file-by-project ()
+  (interactive)
+  (let ((project (my/get-project-by-recentf))
+         file buf)
+    (unless project
+      (error "project is not found."))
+    (setq file
+          (catch 'done
+            (cl-loop for f in recentf-list do
+                     (setq buf (get-file-buffer f))
+                     (if (and (string-match-p my-project-hint-files-filter f)
+                              (not (and buf (get-buffer-window buf)))
+                              (string-prefix-p project f))
+                         (throw 'done f)))))
     (when (and file (file-exists-p file))
       (find-file file))))
-
-(defun my/open-last-main-language-file (&optional switch-project)
-  (interactive "P")
-  (let ((project (my/get-project-by-recentf switch-project)))
-    (my/open-last-file-by-project
-     my-project-hint-files-filter
-     project)))
 
 (defun my/open-last-org-file (&optional arg)
   (interactive "P")

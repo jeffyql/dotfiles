@@ -262,6 +262,7 @@
   "k"   'my/current-kill-to-file-or-new-buffer
   "m"   'magit-find-file
   "p"   'my/add-or-remove-command-snippet
+  "r"   'query-replace
   "s"  (lambda () (interactive) (let ((current-prefix-arg t)) (call-interactively 'deadgrep)))
   "t"   'tab-new
   "x"   'etcc-on
