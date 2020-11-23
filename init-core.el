@@ -406,8 +406,44 @@ has been displayed in this session."
       (open-previous-line 1)
     (open-next-line 1)))
 
-;;; ivy
 ;;; misc
+
+(defun my/list-to-indexed-string (group-name)
+  (let ((counter 0))
+    (mapconcat (lambda (e) (concat e "[" (number-to-string (cl-incf counter)) "]")) group-name " ")))
+
+(defun my/lists-to-string-list-alist (group-names-list)
+  (mapcar (lambda (x) (let ((l (symbol-value x))) (cons (mapconcat 'identity l " ") x))) group-names-list))
+
+(defun my/quick-selection-select-group (group-names-list)
+  (let ((group-alist
+         (my/lists-to-string-list-alist group-names-list))
+        group-name)
+    (ivy-read "Select group: " (mapcar 'car group-alist)
+              :action (lambda (l) (setq group-name
+                                        (cdr (assoc l group-alist))))
+              :caller 'my/quick-selection-select-group)
+    (message "%s" (my/list-to-indexed-string (symbol-value group-name)))
+    group-name))
+
+(defun my/quick-selection-select-item (group-name)
+  (let ((counter 0)
+        (group (if (symbolp group-name) (symbol-value group-name)))
+        len range prompt selected-num)
+    (unless group
+      (error "group is empty"))
+    (unless (listp group)
+      (error "not a list"))
+    (setq len (length group))
+    (if (= 1 len)
+      1
+      (cl-loop for i from 1 to len
+               do (setq range (append (list (string-to-char (number-to-string (cl-incf counter)))) range)))
+      (setq range (append "?\s" range)
+            prompt (my/list-to-indexed-string group)
+            prompt (concat "Press number key: " prompt " or press [space] to cancel")
+            selected-num (read-char-choice prompt range)))))
+;;; ivy
 
 (provide 'init-core)
 

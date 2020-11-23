@@ -24,7 +24,10 @@
   "a"       'my/vterm-append
   "A"       'my/vterm-append-line
   "b"       'vterm-send-M-b
-  "c"       'vterm-send-C-c
+  "c"       nil
+  "cc"      'vterm-send-C-c
+  "ck"      'my/vterm-kill-whole-line
+  "cl"      'vterm-clear
   "d"       nil
   "db"      'vterm-send-meta-backspace
   "dg"      nil
@@ -32,6 +35,8 @@
   "dge"     'vterm-send-C-k
   "dw"      'vterm-send-M-d
   "e"       'my/yank-command-snippet
+  "ga"      'vterm-send-C-a
+  "ge"      'vterm-send-C-e
   "h"       'vterm-send-C-b
   "i"       'my/vterm-insert
   "I"       'my/vterm-insert-line
@@ -42,16 +47,6 @@
   "p"       'my/vterm-yank
   "q"       'my/vterm-send-key
   "r"       'my/vterm-send-C-r
-  "u"       nil
-  "ua"      'vterm-send-C-a
-  "uc"      'my/vterm-save-current-command
-  "ud"      'vterm-send-C-d
-  "ue"      'vterm-send-C-e
-  "ui"      'my/vterm-insert
-  "ut"      'compilation-shell-minor-mode
-  "uu"      'vterm-undo
-  "ux"      'vterm-clear
-  "u."      'vterm-send-meta-dot
   "w"       'vterm-send-M-f
   "x"       'vterm-send-C-d
   "y"       'my/vterm-send-key
@@ -289,6 +284,11 @@
   (my/vterm-insert)
   (vterm-send-C-f))
 
+(defun my/change-word ()
+  (interactive)
+  (vterm-send-M-d)
+  (my/vterm-insert)
+  )
 (defun my/vterm-append-line ()
   (interactive)
   (my/vterm-insert)

@@ -76,6 +76,7 @@
                           (find-file (cdr (assoc f alist)))))
               ;; (message (cdr (assoc f alist)))))
               :caller 'my/recentf-org)))
+
 (defun my/recentf-misc ()
   (interactive)
   (my/recentf-by-type (concat my-project-hint-files-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz$") t))
