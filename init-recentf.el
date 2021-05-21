@@ -1,6 +1,6 @@
 ;; recent files 1) by type (el org), 2) by project (using whatever criterion), or 3) a single group of all other files
 
-(defvar my-project-hint-files-filter "\\.h$\\|\\.c$\\|\\.cpp$\\|\\.hpp$")
+(defvar my-project-hint-files-filter "\\.py$")
 
 (use-package projectile
   :ensure t
@@ -12,6 +12,7 @@
   (projectile-generic-command "fd . -0")
   (projectile-git-command "fd . -0")
   )
+
 (defun my/recentf-by-type (filter &optional exclude)
   (let* ((next-buf (unless (one-window-p) (window-buffer (next-window))))
          list)
@@ -44,11 +45,12 @@
     (if buffer-file-name (setq list (delete buffer-file-name list)))
     (if next-file (setq list (delete next-file list)))
     list))
-
+ 
 (defun my/recentf-by-project (&optional switch-project)
   (interactive "P")
   (let* ((project-root (my/get-project-by-recentf switch-project))
-         (list (cl-remove-if-not (lambda (f) (string-match-p my-project-hint-files-filter f)) recentf-list))
+         (list (cl-remove-if-not (lambda (f) (and (string-prefix-p project-root f)
+                                                  (string-match-p my-project-hint-files-filter f))) recentf-list))
          (list (my/remove-displayed-files list))
          project-root-name prompt)
     (setq list (mapcar (lambda (f) (file-relative-name f project-root)) list)
@@ -68,7 +70,7 @@
   (interactive)
   (let* ((list (cl-remove-if-not  (lambda (x) (string-match "\\.org$" x)) recentf-list))
          (list (if (equal (buffer-file-name) (car list)) (cdr list) list))
-         (alist (mapcar (lambda (f) (cons (org-roam--get-title-or-slug f) f)) list))
+         (alist (mapcar (lambda (f) (cons (org-roam-db--get-title f) f)) list))
          (list (mapcar 'car alist)))
     (ivy-read "Select file: " list
               :action (lambda (f)
@@ -81,6 +83,21 @@
   (interactive)
   (my/recentf-by-type (concat my-project-hint-files-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz$") t))
 
+(defun my/recentf-dirs ()
+  "Present a list of recently used directories and open the selected one in dired"
+  (interactive)
+  (let ((recent-dirs
+         (delete-dups
+          (mapcar (lambda (file)
+                    (if (file-directory-p file) file (file-name-directory file)))
+                  recentf-list))))
+
+    (let ((dir (ivy-read "Directory: "
+                         recent-dirs
+                         :re-builder #'ivy--regex
+                         :sort nil
+                         :initial-input nil)))
+      (dired dir))))
 
 (defun my/last-file-by-type (filter)
   (let ((next-buf (unless (one-window-p) (window-buffer (next-window))))
@@ -90,7 +107,7 @@
           (when buffer-file-name
             (recentf-add-file buffer-file-name)
             (setq list (cdr list)))))
-    (when buffer-file-name
+    (when (equal buffer-file-name (car list))
       (setq list (cdr list)))
     (catch 'done
       (cl-loop for f in list do
@@ -100,12 +117,7 @@
                  (if (funcall filter f)
                      (throw 'done f)))))))
 
-(defun my/open-last-file-by-type (filter)
-  (let ((file (my/last-file-by-type filter)))
-    (when (and file (file-exists-p file))
-      (find-file file))))
-
-(defun my/open-last-file-by-project ()
+(defun my/goto-last-file-by-project ()
   (interactive)
   (let ((project (my/get-project-by-recentf))
          file buf)
@@ -122,26 +134,80 @@
     (when (and file (file-exists-p file))
       (find-file file))))
 
-(defun my/open-last-org-file (&optional arg)
+(defun my/goto-last-org-file (&optional arg)
   (interactive "P")
   (if arg
     (dired my-org-dir)
     (let ((file (my/last-file-by-type "\\.org$")))
       (find-file file))))
 
-(defun my/last-log-file ()
+(defun my/goto-last-sql-file ()
   (interactive)
-  (let (file)
-    (setq file (my/last-file-by-type "capture[0-9]+\\|\\.log$"))
-    (if (file-exists-p file)
-        (find-file file)
-      (message "no log file found"))))
+  (let ((file (my/last-file-by-type "\\.sql$")))
+    (find-file file)))
 
-(defun my/open-last-misc-file ()
+(defun my/goto-last-misc-file ()
   (interactive)
   (let ((file (my/last-file-by-type (lambda (f) (not (string-match-p (concat my-project-hint-files-filter "\\|\\.org$\\|\\.el$\\|\\.el\\.gz$") f))))))
     (if (file-exists-p file)
         (find-file file))))
+
+(defun my/recent-buffers-by-type (pred)
+  (interactive)
+  (let* ((selected (cl-remove-if-not (lambda (b) (funcall pred b)) (buffer-list)))
+         (buffer-names (mapcar #'buffer-name selected)))
+    (ivy-read "Select indirect buffer: " buffer-names
+              :action (lambda (b)
+                        (with-ivy-window
+                          (pop-to-buffer-same-window b))))))
+
+(defun my/recent-narrowed-indirect ()
+  (interactive)
+  (my/recent-buffers-by-type (lambda (b) (and (> (length (buffer-name b)) 4) (equal ">>"(substring (buffer-name b) 0 2))))))
+
+(defun my/recent-search ()
+  (interactive)
+  (my/recent-buffers-by-type (lambda (b) (with-current-buffer b
+                                           (or (eq major-mode 'ivy-occur-grep-mode)
+                                               (eq major-mode 'deadgrep-mode))))))
+
+(defun my/recent-vterms ()
+  (interactive)
+  (my/recent-buffers-by-type (lambda (b) (with-current-buffer b
+                                           (eq major-mode 'vterm-mode)))))
+
+(defun my/goto-last-buffer-by-type (pred)
+  (catch 'done
+    (cl-loop for buf in (buffer-list (selected-frame)) do
+             (when (and (funcall pred buf)
+                        (not (get-buffer-window buf)))
+               (throw 'done buf)))))
+
+(defun my/goto-last-narrowed-buffer ()
+  (interactive)
+  (let (buf)
+    (setq buf (my/goto-last-buffer-by-type (lambda (b) (buffer-base-buffer b))))
+    (if (bufferp buf)
+        (pop-to-buffer-same-window buf)
+      (error "no more narrowed buffer"))))
+
+(defun my/goto-last-vterm-buffer ()
+  (interactive)
+  (let (buf)
+    (setq buf (my/goto-last-buffer-by-type (lambda (b) (with-current-buffer b (eq major-mode 'vterm-mode)))))
+    (if (bufferp buf)
+        (pop-to-buffer-same-window buf)
+      (error "no more vterm buffer"))))
+
+(defun my/goto-last-search-buffer ()
+  (interactive)
+  (let (buf)
+    (setq buf (my/goto-last-buffer-by-type (lambda (b) (with-current-buffer b
+                                                         (or (eq major-mode 'ivy-occur-grep-mode)
+                                                             (eq major-mode 'deadgrep-mode))))))
+    (if (bufferp buf)
+        (pop-to-buffer-same-window buf)
+      (error "no more deadgrep buffer"))))
 
 (defun my/ffap ()
   (interactive)

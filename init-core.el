@@ -172,6 +172,7 @@ has been displayed in this session."
     (define-key ivy-minibuffer-map (kbd "M-;") 'kill-ivy-file)
     (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
     (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
+    (ivy-mode 1)
     )
   (defun kill-ivy-file (x)
     (interactive)
@@ -277,9 +278,11 @@ has been displayed in this session."
    (interactive "P")
    (if (integerp arg)
        (tab-bar-select-tab arg)
-     (if arg
-         (tab-bar-switch-to-recent-tab)
-       (my/toggle-buffer))))
+     (if (equal arg '(16))
+         (tab-new)
+       (if (equal arg '(4))
+           (tab-bar-switch-to-recent-tab)
+         (my/toggle-buffer)))))
  
  (defun my/select-window ()
    (interactive)
@@ -419,12 +422,14 @@ has been displayed in this session."
   (let ((group-alist
          (my/lists-to-string-list-alist group-names-list))
         group-name)
-    (ivy-read "Select group: " (mapcar 'car group-alist)
-              :action (lambda (l) (setq group-name
-                                        (cdr (assoc l group-alist))))
-              :caller 'my/quick-selection-select-group)
-    (message "%s" (my/list-to-indexed-string (symbol-value group-name)))
-    group-name))
+    (if (= 1 (length group-alist))
+        (setq group-name (cdar group-alist))
+      (ivy-read "Select group: " (mapcar 'car group-alist)
+                :action (lambda (l) (setq group-name
+                                          (cdr (assoc l group-alist))))
+                :caller 'my/quick-selection-select-group)
+      (message "%s" (my/list-to-indexed-string (symbol-value group-name)))
+      group-name)))
 
 (defun my/quick-selection-select-item (group-name)
   (let ((counter 0)
@@ -436,7 +441,7 @@ has been displayed in this session."
       (error "not a list"))
     (setq len (length group))
     (if (= 1 len)
-      1
+     (string-to-char (number-to-string 1))
       (cl-loop for i from 1 to len
                do (setq range (append (list (string-to-char (number-to-string (cl-incf counter)))) range)))
       (setq range (append "?\s" range)

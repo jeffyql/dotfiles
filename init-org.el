@@ -1,8 +1,8 @@
 (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
 
-(use-package org
-  :ensure org-plus-contrib
-  :pin org)
+;; (use-package org
+;;   :ensure org-plus-contrib
+;;   :pin org)
 
 ;;; Document structure
 (setq org-M-RET-may-split-line nil)
@@ -339,5 +339,18 @@
     (if find
         (imenu (car find)))
     ))
+
+(defun org-eldoc-load ()
+  "Set up org-eldoc documentation function."
+  (interactive)
+  (cond
+   ((boundp 'eldoc-documentation-strategy)
+    (setq-local eldoc-documentation-strategy
+               #'org-eldoc-documentation-function))
+   ((boundp 'eldoc-documentation-functions)
+    (add-hook 'eldoc-documentation-functions
+             #'org-eldoc-documentation-function nil t))
+   (t (setq-local eldoc-documentation-function
+                 #'org-eldoc-documentation-function))))
 
 (provide 'init-org)

@@ -24,20 +24,21 @@
   "fd"  'my/org-bookmark-goto-definition
   "ff"  'my/org-goto-file-other-window
   "h"   'org-navigate-up/body
+  "i"   'org-id-get-create
   "j"   'org-navigate-next/body
   "k"   'my/org-store-headline-link-1
   "h"   'my/org-store-headline-link
   "l"   'org-insert-link
   "m"   'org-mac-chrome-insert-frontmost-url
+  "m"   'org-roam-node-insert
   "n"   'org-next-visible-heading
   "p"   'org-previous-visible-heading
+  "l"   'org-roam-buffer-toggle
   "s"  'my/org-store-headline-link
-  "t"  'org-insert-structure-template
   "H"   'org-shiftmetaleft
   "K"  'org-metaup
   "L"  'org-shiftmetaright
   "o"  'my/org-open-link
-  "i"  'my/org-open-link-this-window
   "y"  'org-cliplink
   "u"  'outline-up-heading
   "I"  'my/org-insert-prompt
@@ -50,14 +51,17 @@
   ","   'org-insert-structure-template
   )
 
-(my-mf-def
-  :keymaps '(normal motion visual)
-  "c"   'org-roam-db-build-cache
-  "d"   'org-roam
-  "f"   'org-roam-find-file-immediate
-  "i"   'org-roam-insert-immediate
-  "s"   'my/org-store-link-to-current-line
-  "t"   'my/org-roam-new-tab
+(my-mc-def
+  :states 'normal
+  :keymaps 'emacs-lisp-mode-map
+  "c"   'evil-commentary-line
+  "e"   'eval-defun
   )
+
+
+;; (my-mf-def  'normal 'org-roam-mode-map
+;;   "RET"   'org-roam-visit-thing
+;;   "<return>"   'org-roam-visit-thing
+;;   )
 
 (provide 'init-org-keybinding)

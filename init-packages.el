@@ -56,16 +56,18 @@
     )
   )
 
-(use-package magit
-  :ensure t
-  :config
-  (progn
-    (defun my/magit-status ()
-      (interactive)
-      (let ((pop-up-windows nil))
-        (magit-status)))
-    )
-  )
+(use-package magit-section :ensure t)
+
+;; (use-package magit
+;;   :ensure t
+;;   :config
+;;   (progn
+;;     (defun my/magit-status ()
+;;       (interactive)
+;;       (let ((pop-up-windows nil))
+;;         (magit-status)))
+;;     )
+;;   )
 
 (use-package outshine
   :ensure t

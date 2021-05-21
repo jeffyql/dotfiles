@@ -6,6 +6,8 @@
 ;;   (when (y-or-n-p "initialize command snippets? ")
 ;;     (setq my-command-snippets nil)))
 
+(setq my-command-log-file "~/mib/command_log.txt")
+
 (use-package vterm
   :ensure t
   :load-path "/Users/jeff/emacs-libvterm"
@@ -101,7 +103,7 @@
  "v"       'evil-visual-char
  "w"       'evil-forward-word-begin
  "x"       'vterm-copy-mode-ignore
- "DEL"     'vterm-scroll-up
+ "DEL"     'my/vterm-scroll-up
  "SPC"     'my/vterm-scroll-down
  "RET"     'vterm-copy-mode-done
  "<return>"     'vterm-copy-mode-done
@@ -159,6 +161,17 @@
 ;; (defun my/add-or-remove-command-snippet (&optional remove)
 ;;   (interactive "P")
 ;;   (my/saved-lists-add-or-remove-element 'my-command-snippets remove))
+
+;;(defun my/yank-command-snippet ()
+;;  (interactive)
+;;  (unless my-command-snippets
+;;    (with-temp-buffer (insert-file-contents my-command-snippets-file)
+;;                      (setq my-command-snippets (split-string (buffer-string) "\n" t))))
+;;  (let ((selected (my/saved-lists-select 'my-command-snippets)))
+;;    (if (eq major-mode 'vterm-mode)
+;;        (vterm-send-string selected)
+;;      (insert selected))))
+;;        (write-region (concat cmd "\n") nil my-command-log-file t 0)
 
 (defun my/vterm-yank (&optional arg)
   (interactive "P")
@@ -300,11 +313,23 @@
   (vterm-send-key "k" nil nil t)
   )
 
-(defun my/vterm-send-return (&optional arg)
-  (interactive "P")
-  (if arg
-      (my/vterm-save-command))
-  (vterm-send-return))
+(setq vterm-prompt-regexp-1 "^[^[:blank:]]+?\\$[[:blank:]]+\\(.*\\)")
+(defun my/vterm-send-return ()
+  (interactive)
+  (let* ((beg (point-at-bol))
+         (end (point-at-eol))
+         (str (buffer-substring-no-properties beg end))
+         cmd)
+    (vterm-send-return)
+    (cond
+     ((string-match vterm-prompt-regexp-1 str)
+      (setq cmd (match-string 1 str)))
+     ((string-match vterm-prompt-regexp-2 str)
+      (setq cmd (match-string 1 str)))
+     )
+    (if (> (length cmd) 2)
+        (write-region (concat cmd "\n") nil my-command-log-file t 0)
+    )))
 
 (defun my/vterm-send-escape ()
     (interactive)

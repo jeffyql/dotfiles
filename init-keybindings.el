@@ -51,7 +51,7 @@
                 (local-unset-key ".")
                 (local-unset-key (kbd "DEL"))
                 (local-unset-key (kbd "SPC"))
-                (define-key evil-normal-state-local-map   ";" 'avy-goto-word-or-subword-1)
+                (define-key evil-normal-state-local-map   ";" 'avy-goto-word-1)
                 (local-set-key   "x" 'dired-mark)
                 ))
 
@@ -62,6 +62,8 @@
       :ensure t
       :config
       (global-evil-surround-mode 1)
+      ;; Make Evil Normal State the Initial State Always
+      (setq evil-emacs-state-modes nil)
       (evil-define-key 'visual evil-surround-mode-map "S" 'evil-surround-region))
     )
 
@@ -88,6 +90,7 @@
   "DEL" 'evil-scroll-up
   "SPC" 'evil-scroll-down
   "TAB" nil
+  "<escape>" 'my/keyboard-quit
  )
 
 (general-def 'visual
@@ -119,6 +122,8 @@
 (my-f-def
   :keymaps 'normal
   "ESC"  'keyboard-quit
+  "a"    'my/counsel-rg-at-point
+  "b"    'ivy-switch-buffer
   "d"    'dired
   "e"    'my/recentf-el
   "f"    'counsel-find-file
@@ -126,26 +131,25 @@
   "h"    'hydra-help/body
   "i"    'my/counsel-imenu
   "j"    'my/recentf-by-project
+  "k"    'my/recent-vterms
   "l"    'my/counsel-rg
-  "k"    'my/counsel-rg-at-point
   "m"    'counsel-grep-or-swiper
-  "n"    'my/swiper-symbol
+  "n"    'my/counsel-narrowed-indirect
   "o"    'my/recentf-org
   "p"    'my/projectile-find-file
   "r"    'my/recentf-misc
-  "s"    'ivy-switch-buffer
+  "s"    'my/swiper-symbol
   "t"    'my/ripgrep-this-file
   "u"    'counsel-bookmark
-  "v"    'my/counsel-narrowed-indirect
   "w"    'tmux-select-active-window
   "y"    nil
   ","    'my/swiper-current-kill
   ";"    'my/counsel-rg-current-kill
   "."    'ivy-resume
-  "7"    'select-vterm-7
-  "8"    'select-vterm-8
-  "9"    'select-vterm-9
-  "0"    'select-vterm-0
+  "7"    'select-dev-vterm
+  "8"    'select-dev-vterm
+  "9"    'select-dev-vterm
+  "0"    'select-dev-vterm
   )
 
 (evil-define-key nil evil-normal-state-map "g" nil)
@@ -156,23 +160,25 @@
   :keymaps '(normal motion visual) 
   "ESC"  'keyboard-quit
   "a"    'evil-first-non-blank
-  "b"    (lambda () (interactive) (move-to-window-line -1))
+  "b"    'my/goto-last-narrowed-buffer
   "c"    'my/last-log-file
   "d"    'dired-jump
   "e"    'evil-last-non-blank
   "f"    'firefox-to-front
   "g"    'evil-goto-first-line
   "h"    (lambda () (interactive) (dired "~"))
-  "j"    'my/open-last-main-language-file
-  "k"    'hydra-last-buffer-by-mode/body
+  "j"    'my/goto-last-file-by-project
+  "k"    'my/goto-last-vterm-buffer
   "l"    'evil-goto-line
-  "m"    'my/open-last-misc-file
-  "n"    'select-vterm
-  "o"    'my/open-last-org-file
+  "m"    'my/goto-remote-server-root-dir
+  "n"    'my/goto-last-narrowed-buffer
+  "o"    'my/goto-last-org-file
   "p"    'my/projectile-dired
-  "r"    'my/open-last-misc-file
+  "q"    'my/goto-last-sql-file
+  "r"    'my/goto-last-misc-file
   "s"    '(lambda () (interactive) (switch-to-buffer "*scratch*"))
   "t"    (lambda () (interactive) (move-to-window-line 0))
+  "v"    'my/goto-last-vterm-buffer
   ";"    'goto-last-change
   ","    'pop-to-mark-command
   "."    'evil-scroll-line-to-center
@@ -192,7 +198,7 @@
   "c"    nil    ;;c key is reserved as major mode leader 
   "e"    nil
   "d"    'my/send-command
-  "f"    nil
+  "f"    'org-roam-node-find
   "g"    nil
   "i"    'my/switch-indirect-narrow
   "h"    'hydra-move-window-splitter-left-or-up/body
@@ -222,31 +228,23 @@
   "SPC"  'my/insert-space
   "U"    'kmacro-start-macro
   "1"    'test
-  "1"    'vterm-by-number
-  "2"    'vterm-by-number
-  "3"    'vterm-by-number
-  "4"    'vterm-by-number
-  "5"    'vterm-by-number
-  "6"    'vterm-by-number
+  "1"    'my/select-remote-server-vterm
+  "2"    'my/select-remote-server-vterm
+  "3"    'my/select-remote-server-vterm
+  "4"    'my/select-remote-server-vterm
+  "5"    'my/select-remote-server-vterm
+  "6"    'my/select-remote-server-vterm
   )
 
 (general-create-definer my-mc-def
   :prefix "mc"
   )
 
-;(general-create-definer my-md-def
-;  :prefix "md"
-;  )
-
 ;(my-md-def '(normal motion visual) 'override
 ;  "e"  'hydra-edit/body
 ;  "f"  'hydra-file/body
 ;  "v"  'hydra-misc/body
 ;  )
-
-(general-create-definer my-mf-def
-  :prefix "mf"
-  )
 
 (general-create-definer my-mv-def
   :prefix "mv"
