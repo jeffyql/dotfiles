@@ -10,37 +10,41 @@
 
 (use-package vterm
   :ensure t
-  :load-path "/Users/jeff/emacs-libvterm"
+  :init
+  (setenv "SHELL" shell-file-name)
   :config
   (progn
     (setq vterm-max-scrollback 100000
-          vterm-clear-scrollback t
+          ;; vterm-clear-scrollback t
           vterm-keymap-exceptions
-          '("M-:" "C-c" "C-x" "C-u" "C-g" "C-h" "C-l" "M-x" "M-o" "C-y" "M-y"))
+          '("M-:" "C-c" "C-x" "C-u" "C-g" "C-h" "C-l" "C-y" "M-i" "M-x" "M-y"))
     ))
 
+;; (add-hook 'vterm-mode-hook
+;;           (lambda ()
+;;             (set (make-local-variable 'buffer-face-mode-face) 'fixed-pitch)
+;;                  (buffer-face-mode t)))
+
 (add-hook 'vterm-mode-hook #'my/vterm-init-hook)
-(add-hook 'vterm-copy-mode-hook #'my/doom-modeline-update-face)
+;;(add-hook 'vterm-copy-mode-hook #'my/doom-modeline-update-face)
 
 (general-def '(normal motion visual) 'vterm-mode-map
   "a"       'my/vterm-append
   "A"       'my/vterm-append-line
   "b"       'vterm-send-M-b
   "c"       nil
+  "ca"      'vterm-send-C-a
   "cc"      'vterm-send-C-c
-  "ck"      'my/vterm-kill-whole-line
+  "ce"      'vterm-send-C-e
+  "ck"      'vterm-send-C-k
   "cl"      'vterm-clear
+  "cu"     'vterm-send-C-u
   "d"       nil
   "db"      'vterm-send-meta-backspace
-  "dg"      nil
-  "dga"     'vterm-send-C-u
-  "dge"     'vterm-send-C-k
   "dw"      'vterm-send-M-d
   "e"       'my/yank-command-snippet
-  "ga"      'vterm-send-C-a
-  "ge"      'vterm-send-C-e
   "h"       'vterm-send-C-b
-  "i"       'my/vterm-insert
+  "i"       'my/vterm-edit
   "I"       'my/vterm-insert-line
   "j"       'vterm-send-down
   "k"       'vterm-send-up
@@ -57,8 +61,8 @@
   "<up>"    'vterm-send-up
   "DEL"     'my/vterm-scroll-up
   "<backspace>"  'my/vterm-scroll-up
-  "RET" 'my/vterm-send-return
-  "<return>" 'my/vterm-send-return
+  "RET"     'vterm-send-return
+  "<return>" 'vterm-send-return
   "<xterm-paste>"  'my/xterm-paste
   "<escape>"    'my/vterm-quit
   "SPC"       (lambda () (interactive) (vterm-copy-mode 1))
@@ -67,23 +71,12 @@
 
 (general-def 'emacs 'vterm-mode-map
   "<xterm-paste>" 'my/xterm-paste
-  "M-i"    'evil-normal-state
+  "M-i"    'my/vterm-send-escape
   "M-j"    'vterm-send-down
   "M-k"    'vterm-send-up
   "M-p"    'my/vterm-paste-current-kill
-  "<escape>"    'my/vterm-send-escape
-  "<return>" 'my/vterm-send-return
-  "RET" 'my/vterm-send-return
-  )
-
-(general-def 'insert 'vterm-mode-map
-  "<xterm-paste>" 'my/xterm-paste
-  "M-i"    'evil-emacs-state
-  "M-j"    'vterm-send-down
-  "M-k"    'vterm-send-up
-  "M-p"    'my/vterm-paste-current-kill
-  "<return>" 'my/vterm-send-return
-  "RET" 'my/vterm-send-return
+  ;; "<return>" 'my/vterm-send-return
+  ;; "RET" 'my/vterm-send-return
   )
 
 (general-define-key
@@ -176,7 +169,7 @@
 (defun my/vterm-yank (&optional arg)
   (interactive "P")
   (if arg
-      (counsel-yank-pop)
+      (consult-yank-pop)
     (vterm-yank)))
 
 (defun my/vterm-send-key ()
@@ -260,7 +253,7 @@
   (if vterm-copy-mode
       (vterm-copy-mode -1)
     (vterm-reset-cursor-point)
-    (my/doom-modeline-update-face)))
+    ))
 
 (defun my/vterm-quit ()
   (interactive)
@@ -282,19 +275,19 @@
 
 (add-hook 'vterm-mode-hook 'my/vterm-init-hook)
 
-(defun my/vterm-insert ()
+(defun my/vterm-edit ()
   (interactive)
   (my/vterm-cancel)
-  (evil-insert-state 1))
+  (evil-emacs-state 1))
 
 (defun my/vterm-insert-line ()
   (interactive)
-  (my/vterm-insert)
+  (my/vterm-edit)
   (vterm-send-C-a))
 
 (defun my/vterm-append ()
   (interactive)
-  (my/vterm-insert)
+  (my/vterm-edit)
   (vterm-send-C-f))
 
 (defun my/change-word ()
@@ -304,32 +297,8 @@
   )
 (defun my/vterm-append-line ()
   (interactive)
-  (my/vterm-insert)
+  (my/vterm-edit)
   (vterm-send-C-e))
-
-(defun my/vterm-kill-whole-line ()
-  (interactive)
-  (vterm-send-key "a" nil nil t)
-  (vterm-send-key "k" nil nil t)
-  )
-
-(setq vterm-prompt-regexp-1 "^[^[:blank:]]+?\\$[[:blank:]]+\\(.*\\)")
-(defun my/vterm-send-return ()
-  (interactive)
-  (let* ((beg (point-at-bol))
-         (end (point-at-eol))
-         (str (buffer-substring-no-properties beg end))
-         cmd)
-    (vterm-send-return)
-    (cond
-     ((string-match vterm-prompt-regexp-1 str)
-      (setq cmd (match-string 1 str)))
-     ((string-match vterm-prompt-regexp-2 str)
-      (setq cmd (match-string 1 str)))
-     )
-    (if (> (length cmd) 2)
-        (write-region (concat cmd "\n") nil my-command-log-file t 0)
-    )))
 
 (defun my/vterm-send-escape ()
     (interactive)
@@ -420,5 +389,14 @@
   (next-error-no-select)
   (recenter)
   )
+
+(defun my/get-nth-vterm ()
+  (interactive)
+  (let ((base (event-basic-type last-input-event)))
+    (if (cl-digit-char-p base)
+        (my/get-create-vterm (concat "vterm-" (char-to-string base)))
+      )))
+
+(add-to-list 'vterm-eval-cmds '("update-pwd" (lambda (path) (setq default-directory path))))
 
 (provide 'init-vterm)

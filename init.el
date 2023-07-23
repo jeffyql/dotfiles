@@ -36,6 +36,7 @@
 (require 'init-elisp)
 
 (require 'init-ui)
+;; (require 'cogent-modeline)
 
 (require 'init-org)
 (require 'init-org-roam)
@@ -48,6 +49,7 @@
 
 (require 'init-prog)
 
+(require 'init-eglot)
 (require 'init-hydra)
 
 
@@ -60,9 +62,8 @@
 ;; (require 'init-docker)
 ;; (require 'init-postgres)
 
-;; (require 'config-macros)
-;; (require 'config-python)
-
 ;;(server-start)
+(require 'init-python)
+(require 'init-julia)
 (provide 'init)
 

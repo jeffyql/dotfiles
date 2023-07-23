@@ -27,6 +27,7 @@
 
 ;; highlight the current line
 (setq-default   auto-revert-verbose nil
+                auto-save-default nil
                 bidi-display-reordering nil
                 column-number-mode t
                 confirm-kill-emacs #'y-or-n-p
@@ -99,7 +100,7 @@ has been displayed in this session."
 (setq password-cache-expiry nil)
 (setq remote-file-name-inhibit-cache nil)
 (setq tramp-completion-reread-directory-timeout nil)
-(eval-after-load 'tramp '(setenv "SHELL" "/bin/bash"))
+(eval-after-load 'tramp '(setenv "SHELL" "/bin/zsh"))
 ;(setq tramp-histfile-override "/tmp/.tramp_history")
 (setq tramp-histfile-override "/dev/null")
 
@@ -147,39 +148,158 @@ has been displayed in this session."
         avy-all-windows (quote all-frames))
   )
 
-(use-package counsel :ensure t)
+;; (use-package counsel :ensure t)
 
 (use-package deadgrep :ensure t)
 
 (use-package expand-region :ensure t)
-
-(use-package ivy
-  :ensure t
-  :diminish ivy-mode
-  :config
-  (progn
-    ;(ivy-mode 1)
-    ;;(setq ivy-use-virtual-buffers t)
-    (setq ivy-use-selectable-prompt t
-          )
-    (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-occur)
-    (define-key ivy-minibuffer-map (kbd "M-j") 'next-line)
-    (define-key ivy-minibuffer-map (kbd "M-k") 'previous-line)
-    ;; keybindings on mac side
-    (define-key ivy-minibuffer-map (kbd "s-o") 'ivy-occur)
-    (define-key ivy-minibuffer-map (kbd "s-j") 'next-line)
-    (define-key ivy-minibuffer-map (kbd "s-k") 'previous-line)
-    (define-key ivy-minibuffer-map (kbd "M-;") 'kill-ivy-file)
-    (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
-    (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
-    (ivy-mode 1)
-    )
-  (defun kill-ivy-file (x)
-    (interactive)
-    (kill-buffer x)
-    (ivy--reset-state ivy-last)
-    )
+(use-package ctrlf   :ensure t
+  :init
+  (ctrlf-mode +1)
   )
+
+(use-package vertico   :ensure t
+  :init
+  (vertico-mode)
+  :bind (:map vertico-map
+         ("M-j" . vertico-next)
+         ("M-k" . vertico-previous)
+         ("M-m" . vertico-buffer))
+  ;; Different scroll margin
+  ;; (setq vertico-scroll-margin 0)
+
+  ;; Show more candidates
+  ;; (setq vertico-count 20)
+
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (setq vertico-resize t)
+
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  ;; (setq vertico-cycle t)
+  :config
+  (add-hook 'minibuffer-setup-hook #'vertico-repeat-save)
+  )
+
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package consult :ensure t
+  :hook (completion-list-mode . consult-preview-at-point-mode)
+  :init
+  ;; Configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  
+  ;; (setq completion-in-region-function
+  ;;       (lambda (&rest args)
+  ;;         (apply (if vertico-mode
+  ;;                    #'consult-completion-in-region
+  ;;                  #'completion--in-region)
+  ;;                args))) ;; `consult-register-store' and the Emacs built-ins.
+ 
+  (setq register-preview-delay 0.5
+        register-preview-function #'consult-register-format)
+  
+  ;; Tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
+  (advice-add #'register-preview :override #'consult-register-window)
+  
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+  
+  :config
+  ;; Configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key (kbd "M-."))
+  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  ;; For some commands and buffer sources it is useful to configure the
+  ;; :preview-key on a per-command basis using the `consult-customize' macro.
+  (consult-customize
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key (kbd "M-.")
+   :preview-key '(:debounce 0.4 any))
+
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+  )
+
+  (use-package marginalia
+  ;; Either bind `marginalia-cycle' globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+  (use-package embark
+  :ensure t
+
+  :bind
+  (("C-." . embark-act)         ;; pick some comfortable binding
+   ("M-." . embark-dwim)        ;; good alternative: M-.
+   ("M-o" . embark-collect)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+  :init
+
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :ensure t ; only need to install it, embark loads it after consult if found
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+  
+;; (use-package ivy
+;;   :ensure t
+;;   :diminish ivy-mode
+;;   :config
+;;   (progn
+;;     ;(ivy-mode 1)
+;;     ;;(setq ivy-use-virtual-buffers t)
+;;     (setq ivy-use-selectable-prompt t
+;;           )
+;;     (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-occur)
+;;     (define-key ivy-minibuffer-map (kbd "M-j") 'next-line)
+;;     (define-key ivy-minibuffer-map (kbd "M-k") 'previous-line)
+;;     ;; keybindings on mac side
+;;     (define-key ivy-minibuffer-map (kbd "s-o") 'ivy-occur)
+;;     (define-key ivy-minibuffer-map (kbd "s-j") 'next-line)
+;;     (define-key ivy-minibuffer-map (kbd "s-k") 'previous-line)
+;;     (define-key ivy-minibuffer-map (kbd "M-;") 'kill-ivy-file)
+;;     (define-key ivy-minibuffer-map (kbd "C-j") #'ivy-immediate-done)
+;;     (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
+;;     (ivy-mode 1)
+;;     )
+  
+;;  (defun kill-ivy-file (x)
+;;    (interactive)
+;;    (kill-buffer x)
+;;    (ivy--reset-state ivy-last)
+;;    )
+;;  )
 
 ;;; navigation/search
 
@@ -213,14 +333,14 @@ has been displayed in this session."
     (call-interactively 'evil-ex-search-word-forward))
   (beginning-of-thing 'symbol))
 
-(defun my/swiper-symbol ()
+(defun my/consult-line-at-point ()
   (interactive)
   (let ((str (and (symbol-at-point) (thing-at-point 'symbol))))
-        (counsel-grep-or-swiper str)))
+        (consult-line str)))
 
-(defun my/swiper-current-kill ()
+(defun my/consult-line-current-kill ()
   (interactive)
-  (counsel-grep-or-swiper (current-kill 0)))
+  (consult-line (current-kill 0)))
 
 (defun my/counsel-rg ()
   (interactive)
@@ -291,8 +411,8 @@ has been displayed in this session."
        (select-window next-window)))
    (run-hooks 'window-configuration-change-hook))
 
-(defun my/delete-or-split-window ()
-  (interactive)
+(defun my/delete-or-split-window (&optional arg)
+  (interactive "P")
   (if (< 1 (count-windows))
       (delete-other-windows)
     (split-window-right)

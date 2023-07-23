@@ -12,8 +12,10 @@
           evil-move-beyond-eol t)
     (setq evil-motion-state-modes nil)
     (setq evil-shift-width 1)
+    
+    (setq evil-undo-system 'undo-redo)
     (evil-mode 1)
-
+    
     (define-key evil-normal-state-map [escape] 'my/keyboard-quit)
     (define-key evil-visual-state-map [escape] 'keyboard-quit)
 
@@ -72,9 +74,14 @@
     (if (evil-ex-hl-active-p 'evil-ex-search)
         (evil-ex-delete-hl 'evil-ex-search))
     (keyboard-quit))
+
 )
 
 (use-package general :ensure t)
+
+(general-def 'emacs
+  "<escape>" 'evil-normal-state
+  )
 
 (general-def
   :keymaps  '(motion normal visual)
@@ -122,30 +129,30 @@
 (my-f-def
   :keymaps 'normal
   "ESC"  'keyboard-quit
-  "a"    'my/counsel-rg-at-point
-  "b"    'ivy-switch-buffer
-  "d"    'dired
+  "a"    'my/consult-rg-at-point
+  "b"    'consult-buffer
+  "d"    'consult-dir
   "e"    'my/recentf-el
-  "f"    'counsel-find-file
+  "f"    'find-file
   "g"    'grep
   "h"    'hydra-help/body
-  "i"    'my/counsel-imenu
-  "j"    'my/recentf-by-project
-  "k"    'my/recent-vterms
-  "l"    'my/counsel-rg
-  "m"    'counsel-grep-or-swiper
+  "i"    'consult-imenu
+  "j"    'my/recentf-code-file
+  "k"    'my/recentf-data-file
+  "l"    'consult-ripgrep
+  "m"    'consult-line
   "n"    'my/counsel-narrowed-indirect
   "o"    'my/recentf-org
-  "p"    'my/projectile-find-file
+  "p"    'my/recentf-python
   "r"    'my/recentf-misc
-  "s"    'my/swiper-symbol
+  "s"    'my/consult-line-at-point
   "t"    'my/ripgrep-this-file
   "u"    'counsel-bookmark
   "w"    'tmux-select-active-window
-  "y"    nil
-  ","    'my/swiper-current-kill
+  "y"    'consult-yank-pop
+  ","    'my/consult-line-current-kill
   ";"    'my/counsel-rg-current-kill
-  "."    'ivy-resume
+  "."    'vertico-repeat
   "7"    'select-dev-vterm
   "8"    'select-dev-vterm
   "9"    'select-dev-vterm
@@ -167,8 +174,8 @@
   "f"    'firefox-to-front
   "g"    'evil-goto-first-line
   "h"    (lambda () (interactive) (dired "~"))
-  "j"    'my/goto-last-file-by-project
-  "k"    'my/goto-last-vterm-buffer
+  "j"    'my/goto-last-code-file
+  "k"    'my/goto-last-data-file
   "l"    'evil-goto-line
   "m"    'my/goto-remote-server-root-dir
   "n"    'my/goto-last-narrowed-buffer
@@ -196,8 +203,8 @@
   "a"    'my/kill-ring-save-symbol-at-point
   "b"    'hydra-buffer/body
   "c"    nil    ;;c key is reserved as major mode leader 
+  "d"    'my/send-to-repl-window
   "e"    nil
-  "d"    'my/send-command
   "f"    'org-roam-node-find
   "g"    nil
   "i"    'my/switch-indirect-narrow
@@ -210,10 +217,11 @@
   "o"    'occur
   "q"    'my/delete-or-split-window
   "r"    'my/open-line
+  "s"    'ctrlf-forward-default
   "t"    'hydra-toggle/body
   "u"    'hydra-kmacro-end-or-call-macro-repeat/body
   "w"    'my/swap-window
-  "x"    'counsel-M-x
+  "x"    'execute-extended-command
   "v"    nil
   "z"    'my/toggle-or-split-window
   "B"    'balance-windows
@@ -228,12 +236,12 @@
   "SPC"  'my/insert-space
   "U"    'kmacro-start-macro
   "1"    'test
-  "1"    'my/select-remote-server-vterm
-  "2"    'my/select-remote-server-vterm
-  "3"    'my/select-remote-server-vterm
-  "4"    'my/select-remote-server-vterm
-  "5"    'my/select-remote-server-vterm
-  "6"    'my/select-remote-server-vterm
+  "1"    'my/get-nth-vterm
+  "2"    'my/get-nth-vterm
+  "3"    'my/get-nth-vterm
+  "4"    'my/get-nth-vterm
+  "5"    'my/get-nth-vterm
+  "6"    'my/get-nth-vterm
   )
 
 (general-create-definer my-mc-def
@@ -282,13 +290,6 @@
 (define-key minibuffer-local-completion-map [escape] 'abort-recursive-edit)
 (define-key minibuffer-local-must-match-map [escape] 'abort-recursive-edit)
 (define-key minibuffer-local-isearch-map [escape] 'abort-recursive-edit)
-
-;; (with-eval-after-load "helm"
-;;   (define-key helm-map  [escape] 'keyboard-escape-quit))
-(with-eval-after-load "ivy"
-  (define-key ivy-minibuffer-map [escape] 'minibuffer-keyboard-quit))
-;; (with-eval-after-load "popup"
-;;   (define-key popup-menu-keymap  [escape] 'keyboard-quit))
 
 (provide 'init-keybindings)
 

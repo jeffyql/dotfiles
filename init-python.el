@@ -1,101 +1,102 @@
-(use-package conda
-   :init
-   (custom-set-variables '(conda-anaconda-home "~/miniconda3"))
-   :config
-   ;(conda-env-autoactivate-mode t)
-   )
+(general-def 'normal 'python-mode-map
+  "<return>"     'xref-find-definitions-other-window
+  "RET"          'xref-find-definitions-other-window
+  "M-p"          'code-cells-move-cell-up
+  "M-n"          'code-cells-move-cell-down
+  "M-j"          'code-cells-forward-cell
+  "M-k"          'code-cells-forward-cell
+ )
 
-(use-package python-x)
-
-(define-key python-mode-map (kbd "M-n") 'python-forward-fold-or-section)
-(define-key python-mode-map (kbd "M-p") 'python-backward-fold-or-section)
-
-(my-mf-def
-  :states '(normal motion visual) 
-  :keymaps 'python-mode-map
-  "a"  'tmux-ipython-conda-env-activate
-  "b"  'tmux-ipython-send-to-end
-  "c"  'tmux-ipython-send-buffer
-  "e"  'my/conda-env-activate
-  "f"  'tmux-ipython-send-defun
-  "i"  'tmux-ipython-start-existing
-  "m"  'counsel-tmux-ipython-send-magic
-  "n"  'tmux-ipython-start-notebook
-  "r"  'tmux-ipython-reset
-  "t"  'tmux-ipython-send-from-beginning
-  "v"  'tmux-ipython-print
+(my-mc-def 'normal 'python-mode-map
+  "c"   'evil-commentary-line
+  "e"   'my/start-eglot
+  "m"   'code-cells-mark-cell
+  "t"   'code-cells-mode
   )
 
-(my-s-def
-  :states '(normal motion visual) 
-  :keymaps 'python-mode-map
-  "s"  'tmux-ipython-send-region
-  )
+;; https://robbmann.io/posts/emacs-eglot-pyrightconfig/
+(defun my/eglot-workspace-config-1 (server)
+  (interactive "DEnv: ")
+  (let* (;; file-truename and tramp-file-local-name ensure that neither `~' nor
+         ;; the Tramp prefix (e.g. "/ssh:my-host:") wind up in the final
+         ;; absolute directory path.
+         (venv-dir (tramp-file-local-name (file-truename "/sshx:jeff@192.168.2.1:/home/jeff/miniconda3/envs/proj1")))
 
-(defvar tmux-ipython-magic-list
+         ;; Given something like /path/to/.venv/, this strips off the trailing `/'.
+         (venv-file-name (directory-file-name venv-dir))
+
+         ;; Naming convention for venvPath matches the field for
+         ;; pyrightconfig.json.  `file-name-directory' gets us the parent path
+         ;; (one above .venv).
+         (venvPath (file-name-directory venv-file-name))
+         (venv (file-name-nondirectory venv-dir))
+         (pythonPath (concat venvPath "bin/python3"))) 
+
+      (list (cons :python
+                  (list :venvPath vp :venv vn
+                        :pythonPath (concat venv "/bin/python3"))))))
+(defvar venvPathes
   '(
-    "%history"
-    "%reset -f"
+    "/home/jeff/miniconda3/envs/proj1"
+    "/Users/yuanqianli/miniconda3/envs/proj1"
     ))
-  
-(defun counsel-tmux-ipython-send-magic ()
+
+(defvar venv nil)
+(defvar pythonPath nil)
+
+(defun my/start-eglot ()
   (interactive)
-  (ivy-read "Select Magic: "
-            tmux-ipython-magic-list
-            :action (lambda (x) (tmux-run-key x))
-            :caller 'counsel-tmux-ipython-send-magic
-            ))
+  (setq venv (completing-read "Select venvPath: " venvPathes)
+        vp (file-name-directory venv)
+        vn (file-name-nondirectory venv))
+  (setq-default eglot-workspace-configuration
+                (list (cons :python
+                            (list :venvPath vp :venv vn
+                                  :pythonPath (concat venv "/bin/python3")))))
+  (call-interactively 'eglot))
 
-(defun tmux-ipython-reset ()
+(my-m-def 'normal 'python-mode-map
+  "s"   'my/python-send-to-repl 
+  )
+(defun my/python-send-to-repl ()
   (interactive)
-  (when (y-or-n-p "reset ipython?")
-    (tmux-run-key "%reset -f")))
+  (let ((buf (unless (one-window-p) (window-buffer (next-window))))
+        beg end window)
+    (unless (bufferp buf)
+        (error "next window not found"))
+    (with-current-buffer buf
+      (unless (eq major-mode 'vterm-mode)
+        (error "next window buffer is not a repl buffer")))
+    (save-excursion
+      (python-nav-beginning-of-statement)
+      (cond
+       ((python-info-current-defun)
+        (setq beg
+              (progn
+                (end-of-line 1)
+                (while (and (or (python-nav-beginning-of-defun)
+                                (beginning-of-line 1))
+                            (> (current-indentation) 0)))
+                (while (and (forward-line -1)
+                            (looking-at (python-rx decorator))))
+                (and (not (bobp)) (forward-line 1))
+                (point-marker))
+              end
+              (progn
+                (or (python-nav-end-of-defun)
+                    (end-of-line 1))
+                (point-marker))))
+       ((python-info-beginning-of-statement-p)
+        (setq beg (point)
+              end (python-nav-end-of-statement)))))
+    (setq cmd-str (buffer-substring-no-properties beg end))
+    (with-current-buffer buf
+      (vterm-insert cmd-str)
+      (vterm-send-return)
+      )))
 
-(defun my/conda-env-activate (&optional arg)
-  (interactive "P")
-  (let* ((env-name conda-env-current-name))
-    (when (or (not env-name)
-              (y-or-n-p (concat "environment is set to: ["
-                                env-name
-                                "]. change to a new environment?")))
-      (ivy-read "Select a conda environment: "
-                (conda-env-candidates)
-                :action (lambda (x)
-                          (conda-env-activate x)
-                          (lsp-restart-workspace))
-                :caller 'my/conda-env-activate
-            ))
-    (tmux-ipython-conda-env-activate)
-    (if (y-or-n-p "login to the latest jupyter notebook?")
-        (tmux-ipython-start-notebook))))
+;; (use-package python-x)
 
-(defun tmux-ipython-check-pane ()
-  (unless (tmux-pane-1-exist-p)
-      (error "pane 1 doesn't exist"))
-  (if (tmux-python-console-p)
-      (if (yes-or-no-p "quit current ipython shell? ")
-          (tmux-run-key "exit")
-        (error "set conda env not allowed inside an ipython shell"))))
-
-(defun tmux-ipython-conda-env-activate ()
-  (interactive)
-  (let ((env conda-env-current-name))
-    (unless (stringp env)
-      (error "conda env for current buffer not set"))
-    (tmux-ipython-check-pane)
-    (tmux-run-key (concat "conda activate " env))))
-
-(defun tmux-ipython-start-notebook ()
-  (interactive)
-  (tmux-ipython-check-pane)
-  (tmux-run-key "jupyter notebook & ")
-  (tmux-run-key "C-m"))
-
-
-(defun tmux-ipython-run ()
-  (interactive)
-  (tmux-ipython-check-pane)
-  (let ((kernel-id (read-string "kernel id: ")))
-    (tmux-run-key "jupyter console --existing " kernel-id)))
+;; (setq python-shell-interpreter "python3")
 
 (provide 'init-python)

@@ -5,19 +5,21 @@
 
 (add-to-list 'savehist-additional-variables 'saved-capture-file-number)
 
-(defun my/capture-by-file (&optional arg)
-  (interactive "P")
+(defun my/capture-by-file ()
+  (interactive)
   (unless saved-capture-file-number
     (setq saved-capture-file-number 0))
   (let* ((file (concat my-saved-captures-dir
                        "capture"
                        (number-to-string saved-capture-file-number)))
-         (filename (read-string "filename: " file nil file)))
+         (filename (read-string "filename: " file nil file))
+         buf)
     (if (file-exists-p filename)
         (delete-file filename))
-    (if arg
-      (write-region nil nil filename))
-    (find-file filename)
+    (setq buf (find-file-noselect filename))
+    (write-region nil nil filename)
+    (switch-to-buffer buf)
+    (revert-buffer :ignore-auto :noconfirm)
     (if (string= file filename)
       (if (= saved-capture-file-number 63)
           (setq saved-capture-file-number 0)

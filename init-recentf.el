@@ -1,4 +1,5 @@
 ;; recent files 1) by type (el org), 2) by project (using whatever criterion), or 3) a single group of all other files
+(require 'consult)
 
 (defvar my-project-hint-files-filter "\\.py$")
 
@@ -22,11 +23,14 @@
     (if next-buf
         (setq list (delete (buffer-file-name next-buf) list)))
     (setq list (delete buffer-file-name list))
-    (ivy-read "Select file: " list
-              :action (lambda (f)
-                        (with-ivy-window
-                          (find-file f)))
-              :caller 'counsel-recentf)))
+    (find-file
+     (consult--read (mapcar #'abbreviate-file-name list)
+                    :prompt "Find recent file: "
+                    :sort nil
+                    :require-match t
+                    :category 'file
+                    ;; :state (consult--file-preview)
+                    ))))
 
 (defun my/get-project-by-recentf (&optional switch-project)
   (let (project-root first root)
@@ -65,6 +69,14 @@
 (defun my/recentf-el ()
   (interactive)
   (my/recentf-by-type "\\.el$\\|\\.el.gz$"))
+
+(defun my/recentf-code-file ()
+  (interactive)
+  (my/recentf-by-type "\\.py$\\|\\.sql$"))
+
+(defun my/recentf-data-file ()
+  (interactive)
+  (my/recentf-by-type "\\.txt$\\|\\.csv$\\|\\.json$\\|\\.xml"))
 
 (defun my/recentf-org ()
   (interactive)
@@ -139,12 +151,20 @@
   (if arg
     (dired my-org-dir)
     (let ((file (my/last-file-by-type "\\.org$")))
-      (find-file file))))
+    (if (file-exists-p file)
+        (find-file file)))))
 
-(defun my/goto-last-sql-file ()
+(defun my/goto-last-code-file ()
   (interactive)
-  (let ((file (my/last-file-by-type "\\.sql$")))
-    (find-file file)))
+  (let ((file (my/last-file-by-type "\\.py$\\|\\.sql$")))
+    (if (file-exists-p file)
+        (find-file file))))
+
+(defun my/goto-last-data-file ()
+  (interactive)
+  (let ((file (my/last-file-by-type "\\.txt$\\|\\.xml$\\|\\.json$\\|\\.csv$")))
+    (if (file-exists-p file)
+        (find-file file))))
 
 (defun my/goto-last-misc-file ()
   (interactive)
@@ -156,10 +176,11 @@
   (interactive)
   (let* ((selected (cl-remove-if-not (lambda (b) (funcall pred b)) (buffer-list)))
          (buffer-names (mapcar #'buffer-name selected)))
-    (ivy-read "Select indirect buffer: " buffer-names
-              :action (lambda (b)
-                        (with-ivy-window
-                          (pop-to-buffer-same-window b))))))
+    (consult--read names-buffer
+     :prompt "Select indirect buffer: "
+     :sort nil
+     :require-match t
+     )))
 
 (defun my/recent-narrowed-indirect ()
   (interactive)
@@ -193,11 +214,16 @@
 
 (defun my/goto-last-vterm-buffer ()
   (interactive)
-  (let (buf)
+  (let (buf buffer-name)
     (setq buf (my/goto-last-buffer-by-type (lambda (b) (with-current-buffer b (eq major-mode 'vterm-mode)))))
     (if (bufferp buf)
         (pop-to-buffer-same-window buf)
-      (error "no more vterm buffer"))))
+      (setq buffer-name 
+            (if (eq major-mode 'vterm-mode)
+                (if (string= (substring (buffer-name) 0 7) "vterm-1") "vterm-2" "vterm-1")
+              "vterm-1")
+            buffer-name (read-string "vterm buffer name: " buffer-name))
+        (my/get-create-vterm buffer-name))))
 
 (defun my/goto-last-search-buffer ()
   (interactive)

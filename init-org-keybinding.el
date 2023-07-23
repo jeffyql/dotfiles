@@ -28,13 +28,14 @@
   "j"   'org-navigate-next/body
   "k"   'my/org-store-headline-link-1
   "h"   'my/org-store-headline-link
+  ;; "l"   'org-roam-buffer-toggle
   "l"   'org-insert-link
-  "m"   'org-mac-chrome-insert-frontmost-url
   "m"   'org-roam-node-insert
   "n"   'org-next-visible-heading
   "p"   'org-previous-visible-heading
-  "l"   'org-roam-buffer-toggle
+  "r"  'org-roam-tag-remove
   "s"  'my/org-store-headline-link
+  "t"  'org-roam-tag-add
   "H"   'org-shiftmetaleft
   "K"  'org-metaup
   "L"  'org-shiftmetaright
@@ -49,13 +50,6 @@
   "g"   'org-agenda-file-to-front
   "$"   'org-insert-prompt
   ","   'org-insert-structure-template
-  )
-
-(my-mc-def
-  :states 'normal
-  :keymaps 'emacs-lisp-mode-map
-  "c"   'evil-commentary-line
-  "e"   'eval-defun
   )
 
 

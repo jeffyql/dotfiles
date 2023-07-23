@@ -15,7 +15,7 @@
 (setq password-cache-expiry nil)
 (setq remote-file-name-inhibit-cache nil)
 (setq tramp-completion-reread-directory-timeout nil)
-(eval-after-load 'tramp '(setenv "SHELL" "/bin/bash"))
+(eval-after-load 'tramp '(setenv "SHELL" "/bin/zsh"))
 ;(setq tramp-histfile-override "/tmp/.tramp_history")
 (setq tramp-histfile-override "/dev/null")
 

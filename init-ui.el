@@ -1,8 +1,8 @@
 (if (eq system-type 'darwin)
     (progn
       (set-face-attribute 'default nil
-                          :family "Hack"
-                          :height 140
+                          :family "Iosevka"
+                          :height 180
                           :background "cornsilk")
       (set-keyboard-coding-system 'iso-latin-2)
       (setq mac-command-key-is-meta t
@@ -14,7 +14,6 @@
   
   )
 
-(set-face-attribute 'ivy-prompt-match nil :inherit nil)
 (set-face-attribute 'org-checkbox-statistics-todo nil :inherit 'link)
 
 (menu-bar-mode -1)
@@ -44,8 +43,8 @@
 (setq pop-up-windows nil)
 
 (if (display-graphic-p)
-    (setq evil-insert-state-cursor '(hbar  "chartreuse3")
-          evil-normal-state-cursor '(box "DarkGoldenrod2")
+    (setq evil-insert-state-cursor '(box  "DarkOliveGreen3")
+          evil-normal-state-cursor '(box "DarkGoldenrod2")  ;;
           evil-emacs-state-cursor '(hbar "SkyBlue2"))
   (setq evil-visual-state-cursor 'box
         evil-normal-state-cursor 'box
@@ -67,59 +66,50 @@
                    (abbreviate-file-name (buffer-file-name))
                  "%b"))))
 
-(use-package doom-modeline
+;; (use-package doom-modeline
+;;   ;; :ensure t
+;;   ;; :init (doom-modeline-mode 1)
+;;   :config
+;;   (setq-default doom-modeline-height 15)
+  
+;;   (defun my-doom-modeline--font-height ()
+;;     "Calculate the actual char height of the mode-line."
+;;     (+ (frame-char-height) 2))
+  
+;;   (advice-add #'doom-modeline--font-height :override #'my-doom-modeline--font-height)
 
-      :config
-      (progn
-        (setq doom-modeline-buffer-file-name-style 'relative-from-project
-              doom-modeline-height 8)
-        (setq doom-one-brighter-modeline t)
-        (doom-modeline-init)
-        (remove-hook 'after-change-functions #'doom-modeline-update-buffer-file-name-face)
-        (add-function :after after-focus-change-function #'my/doom-modeline-update-face)
-        (add-hook 'after-change-functions #'my/doom-modeline-normal-state-after-change-set-face)
-        (add-hook 'evil-insert-state-entry-hook #'my/doom-modeline-insert-state-update-face)
-        ;;(add-hook 'after-change-major-mode-hook #'my/doom-modeline-update-face)
-        )
-      :hook (after-init . doom-modeline-mode))
+;; (doom-modeline-def-modeline 'my-doom-modeline
+;;   '(bar workspace-name window-number my-modals matches follow buffer-info remote-host buffer-position word-count parrot selection-info)
+;;   '(compilation objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding major-mode process vcs checker time))
 
-(setq frame-title-format
-      '((:eval (if (buffer-file-name)
-                   (abbreviate-file-name (buffer-file-name))
-                 "%b"))))
+;; ;; Set default mode-line
+;; (add-hook 'doom-modeline-mode-hook
+;;           (lambda ()
+;;             (doom-modeline-set-modeline 'my-doom-modeline 'default)))
 
-(defun my/doom-modeline-update-face ()
-  (if (frame-focus-state)
-      (setq doom-modeline--buffer-file-name
-            (cond
-             ((evil-insert-state-p)
-              (propertize doom-modeline--buffer-file-name
-                          'face 'widget-single-line-field))
-             ((and (equal major-mode 'vterm-mode) vterm-copy-mode)
-              (propertize doom-modeline--buffer-file-name
-                          'face 'doom-modeline-debug-visual))
-             ((and (buffer-modified-p) (not (equal major-mode 'vterm-mode)))
-              (propertize doom-modeline--buffer-file-name
-                          'face 'doom-modeline-buffer-modified))
-             (t
-              (propertize "%b"
-                          'face 'doom-modeline-buffer-file
-                          'mouse-face 'mode-line-highlight
-                          'help-echo "Buffer name mouse-1: Previous buffer\nmouse-3: Next buffer"
-                          'local-map mode-line-buffer-identification-keymap))))))
+;; )
 
-(defun my/doom-modeline-insert-state-update-face ()
-  (setq doom-modeline--buffer-file-name
-        (propertize doom-modeline--buffer-file-name
-                    'face 'widget-single-line-field)))
+(defvar my-selwin nil)
 
-(defun my/doom-modeline-normal-state-after-change-set-face (&rest _)
-  (when (and (evil-normal-state-p)
-             (not (equal major-mode 'vterm-mode))
-             doom-modeline--buffer-file-name
-             (buffer-modified-p))
-    (setq doom-modeline--buffer-file-name
-          (propertize doom-modeline--buffer-file-name
-                      'face 'doom-modeline-buffer-modified))))
+(defun my/get-selwin (windows)
+  (when (not (minibuffer-window-active-p (frame-selected-window)))
+    (setq my-selwin (selected-window))))
+
+(add-function :before pre-redisplay-function #'my/get-selwin)
+
+
+(setq-default mode-line-format
+              (list
+               '(:eval
+                 (propertize (concat " %b %l " (make-string (window-body-width) ?\s)) 'face
+                             (if (eq my-selwin (get-buffer-window))
+                                 (if (and (buffer-modified-p) (not (eq major-mode 'vterm-mode)))
+                                     (if (memq evil-state '(emacs insert))
+                                         '(:background "DarkOliveGreen3" :foreground "red" :weight bold)
+                                       '(:background "burlywood1" :foreground "red" :weight bold))
+                                   (if (memq evil-state '(emacs insert))
+                                       '(:background "DarkOliveGreen3" :foreground "black" :weight bold)
+                                     '(:background "burlywood1" :foreground "black" :weight bold))))))))
+
 
 (provide 'init-ui)

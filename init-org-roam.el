@@ -1,5 +1,17 @@
-(add-to-list 'load-path "~/org-roam/")
-(load-library "org-roam")
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "/Users/yuanqianli/org-roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  (org-roam-db-autosync-mode))
+
 (setq org-roam-directory (file-truename my-org-dir))
 (setq org-roam-file-extensions '("org"))
 (setq org-id-link-to-org-use-id t)
@@ -31,7 +43,6 @@ Arguments GOTO and KEYS see `org-capture'."
                        :keys keys
                        :node node
                        :props '(:immediate-finish nil))))
-(org-roam-setup)
 
 ;; (require 'org-roam-doctor)
 

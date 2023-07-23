@@ -1,21 +1,31 @@
-
-(defun my/send-command ()
+(defun my/send-to-repl-window ()
   (interactive)
-  (let ((buf (unless (one-window-p) (window-buffer (next-window))))
+  (if (one-window-p)
+      (error "next window not found"))
+  (let ((buf (window-buffer (next-window)))
         mode beg end cmd-str window)
-    (if (one-window-p)
-        (error "only one window"))
     (with-current-buffer buf
       (unless (or (eq major-mode 'vterm-mode)
                   (eq major-mode 'sql-interactive-mode))
-        (error "next buffer not a shell buffer"))
+        (error "next window buffer is not a repl buffer"))
       (setq mode major-mode))
     (cond
      ((use-region-p)
       (setq beg (region-beginning) 
             end (region-end))
       (deactivate-mark t))
-     ((eq major-mode 'org-mode)
+     ((code-cells-mode)
+      (setq code-cells-boundary-regexp 
+            (cond
+             ((eq major-mode 'python-mode)
+              "\\s<+\\(?:\\s-*%\\(?1:%+\\)\\|\\(?1:\\*+\\)\\| In\\[[[:space:][:digit:]]*]:\\)")      
+             ((eq major-mode 'sql-mode)
+              "^-- %%.*")
+             )
+            cell (code-cells--bounds)
+            beg (car cell)
+            end (cadr cell)))
+     ((eq 'org-mode major-mode)
       (cond
        ((org-in-item-p)
         (save-excursion

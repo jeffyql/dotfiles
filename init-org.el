@@ -49,17 +49,23 @@
 ;; save archive file
 (add-hook 'org-archive-hook 'org-save-all-org-buffers)
 
-(define-key org-src-mode-map "q" 'org-edit-src-exit)
-(defhydra hydra-org-goto (:color blue)
-  "Org open files"
-  ("b"   (lambda () (interactive) (dired my-org-babel-dir)) "babel dir")
-  ("d"   (lambda () (interactive) (find-file my-org-db-dir)) "db dir")
-  ("l"   (lambda () (interactive) (find-file my-org-code-bookmark-file)) "emacs_link")
-  ("n"   (lambda () (interactive) (dired my-org-notes-dir)) "notes dir")
-  ("o"   (lambda () (interactive) (dired my-org-dir)) "org dir")
-  ("p"   (lambda () (interactive) (find-file (concat my-org-notes-dir "proj.org"))) "current proj")
-  ("B"   (lambda () (interactive) (find-file (concat my-org-db-dir "bookmark.org"))) "bookmark")
-  )
+;; (define-key org-src-mode-map "q" 'org-edit-src-exit)
+;; (defhydra hydra-org-goto (:color blue)
+;;   "Org open files"
+;;   ("b"   (lambda () (interactive) (dired my-org-babel-dir)) "babel dir")
+;;   ("d"   (lambda () (interactive) (find-file my-org-db-dir)) "db dir")
+;;   ("l"   (lambda () (interactive) (find-file my-org-code-bookmark-file)) "emacs_link")
+;;   ("n"   (lambda () (interactive) (dired my-org-notes-dir)) "notes dir")
+;;   ("o"   (lambda () (interactive) (dired my-org-dir)) "org dir")
+;;   ("p"   (lambda () (interactive) (find-file (concat my-org-notes-dir "proj.org"))) "current proj")
+;;   ("B"   (lambda () (interactive) (find-file (concat my-org-db-dir "bookmark.org"))) "bookmark")
+;;   )
+
+(defun my/org-insert-file-tags ()
+  (beginning-of-line)
+  (if (and (looking-at-p "[[:space:]]*$") (org-before-first-heading-p))
+      (insert "#+FILETAGS: ")
+      ))
 
 (defun my/org-remove-file ()
   (interactive)
@@ -77,12 +83,12 @@
     (setq hydra-deactivate t)
     ))
   
-(defhydra hydra-org-cycle-agenda-files (:body-pre (body-pre-org-cycle-agenda-files))
-  "org cycle agenda files"
-  ("RET" org-cycle-agenda-files "cycle")
-  ("a"   org-agenda-file-to-front "add to front")
-  ("x"   my/org-remove-file "delete")
-  )
+;; (defhydra hydra-org-cycle-agenda-files (:body-pre (body-pre-org-cycle-agenda-files))
+;;   "org cycle agenda files"
+;;   ("RET" org-cycle-agenda-files "cycle")
+;;   ("a"   org-agenda-file-to-front "add to front")
+;;   ("x"   my/org-remove-file "delete")
+;;   )
 
 (face-spec-reset-face 'org-block-begin-line)
 (face-spec-reset-face 'org-block-end-line)
@@ -246,11 +252,11 @@
   (with-current-buffer (org-capture-get :original-buffer)
     (my/org-heading-link)))
 
-(defhydra hydra/org-mac-link (:color blue)
-  ("c" org-mac-chrome-get-frontmost-url "chrome")
-  ("f" org-mac-finder-item-get-selected "finder")
-  ("m" org-mac-message-insert-selected "mail")
-  )
+;; (defhydra hydra/org-mac-link (:color blue)
+;;   ("c" org-mac-chrome-get-frontmost-url "chrome")
+;;   ("f" org-mac-finder-item-get-selected "finder")
+;;   ("m" org-mac-message-insert-selected "mail")
+;;   )
 
 (defun my/org-goto-reminders ()
   (interactive)
